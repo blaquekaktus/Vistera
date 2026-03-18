@@ -4,10 +4,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
   Building2, Eye, MessageSquare, Calendar, Plus, TrendingUp,
-  MoreHorizontal, Play, Star, ArrowUpRight, Mountain,
+  MoreHorizontal, Play, Star, ArrowUpRight, Mountain, LogOut,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { formatPrice, getCountryFlag } from '@/lib/utils';
+import { logout } from '@/lib/actions/auth';
 
 export interface DashboardProperty {
   id: string;
@@ -149,6 +150,19 @@ export default function DashboardClient({
             <span className="font-bold text-white">{agentRating}</span>
             <span className="text-white/40">({agentReviewCount} {language === 'de' ? 'Bewertungen' : 'reviews'})</span>
           </div>
+        </div>
+
+        {/* Logout */}
+        <div className="p-4 border-t border-white/10">
+          <form action={logout}>
+            <button
+              type="submit"
+              className="flex items-center gap-2 text-sm text-white/50 hover:text-white/80 transition-colors w-full"
+            >
+              <LogOut className="w-4 h-4" />
+              {language === 'de' ? 'Abmelden' : 'Sign out'}
+            </button>
+          </form>
         </div>
       </aside>
 

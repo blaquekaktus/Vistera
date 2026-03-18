@@ -98,3 +98,51 @@ export async function getProfile() {
 
   return profile;
 }
+
+export async function forgotPassword(prevState: AuthState, formData: FormData): Promise<AuthState> {
+  const supabase = createClient();
+  const email = formData.get('email') as string;
+
+  if (!email) {
+    return { error: 'Bitte E-Mail-Adresse eingeben.' };
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/auth/callback?next=/profile/reset-password`,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return { success: true };
+}
+
+export async function updateProfile(prevState: AuthState, formData: FormData): Promise<AuthState> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: 'Nicht angemeldet.' };
+  }
+
+  const name = formData.get('name') as string;
+  const phone = formData.get('phone') as string;
+
+  if (!name) {
+    return { error: 'Name ist erforderlich.' };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any)
+    .from('profiles')
+    .update({ name, phone: phone || null })
+    .eq('id', user.id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath('/profile');
+  return { success: true };
+}

@@ -1,9 +1,10 @@
 'use client';
 
+import { useActionState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
-  ArrowLeft, MapPin, Bed, Bath, Square, Calendar, Zap,
+  ArrowLeft, MapPin, Bed, Bath, Square, Calendar, Zap, CheckCircle2, AlertCircle,
   Play, Phone, Mail, Star, ChevronRight, Layers,
   ParkingSquare, TreePine, Warehouse, ArrowUpDown,
 } from 'lucide-react';
@@ -12,7 +13,10 @@ import { Footer } from '@/components/layout/Footer';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { formatPrice, getCountryFlag, getCountryName, cn } from '@/lib/utils';
 import { useState } from 'react';
+import { submitInquiry } from '@/lib/actions/property';
 import type { Property } from '@/lib/types';
+
+const inquiryInitialState = { error: undefined, success: false };
 
 interface Props {
   property: Property;
@@ -21,6 +25,7 @@ interface Props {
 export default function PropertyDetailClient({ property }: Props) {
   const { language, t } = useLanguage();
   const [activeImageIdx, setActiveImageIdx] = useState(0);
+  const [inquiryState, inquiryAction, isInquiryPending] = useActionState(submitInquiry, inquiryInitialState);
 
   const title = language === 'de' ? property.titleDe : property.title;
   const description = language === 'de' ? property.descriptionDe : property.description;
@@ -341,28 +346,65 @@ export default function PropertyDetailClient({ property }: Props) {
                   <h3 className="text-sm font-bold text-slate-900 mb-3">
                     {language === 'de' ? 'Nachricht senden' : 'Send Message'}
                   </h3>
-                  <div className="flex flex-col gap-2">
-                    <input
-                      type="text"
-                      placeholder={language === 'de' ? 'Ihr Name' : 'Your name'}
-                      className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400"
-                    />
-                    <input
-                      type="email"
-                      placeholder={language === 'de' ? 'E-Mail-Adresse' : 'Email address'}
-                      className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400"
-                    />
-                    <textarea
-                      rows={3}
-                      placeholder={language === 'de'
-                        ? 'Ich interessiere mich für dieses Objekt...'
-                        : 'I am interested in this property...'}
-                      className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400 resize-none"
-                    />
-                    <button className="w-full bg-brand-600 text-white text-sm font-semibold py-3 rounded-xl hover:bg-brand-700 transition-colors">
-                      {language === 'de' ? 'Anfrage senden' : 'Send Inquiry'}
-                    </button>
-                  </div>
+
+                  {inquiryState.success ? (
+                    <div className="flex items-start gap-2 bg-green-50 border border-green-200 text-green-700 text-sm px-3 py-3 rounded-xl">
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold">{language === 'de' ? 'Anfrage gesendet!' : 'Inquiry sent!'}</p>
+                        <p className="text-green-600 text-xs mt-0.5">
+                          {language === 'de'
+                            ? 'Der Makler meldet sich in Kürze bei Ihnen.'
+                            : 'The agent will get back to you shortly.'}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <form action={inquiryAction} className="flex flex-col gap-2">
+                      <input type="hidden" name="propertyId" value={property.id} />
+                      <input type="hidden" name="agentId" value={property.agent.id} />
+
+                      {inquiryState.error && (
+                        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-xs px-3 py-2 rounded-lg">
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                          {inquiryState.error}
+                        </div>
+                      )}
+
+                      <input
+                        name="name"
+                        type="text"
+                        required
+                        placeholder={language === 'de' ? 'Ihr Name' : 'Your name'}
+                        className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400"
+                      />
+                      <input
+                        name="email"
+                        type="email"
+                        required
+                        placeholder={language === 'de' ? 'E-Mail-Adresse' : 'Email address'}
+                        className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400"
+                      />
+                      <textarea
+                        name="message"
+                        rows={3}
+                        required
+                        placeholder={language === 'de'
+                          ? 'Ich interessiere mich für dieses Objekt...'
+                          : 'I am interested in this property...'}
+                        className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400 resize-none"
+                      />
+                      <button
+                        type="submit"
+                        disabled={isInquiryPending}
+                        className="w-full bg-brand-600 text-white text-sm font-semibold py-3 rounded-xl hover:bg-brand-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        {isInquiryPending
+                          ? (language === 'de' ? 'Wird gesendet...' : 'Sending...')
+                          : (language === 'de' ? 'Anfrage senden' : 'Send Inquiry')}
+                      </button>
+                    </form>
+                  )}
                 </div>
 
                 {/* Stats */}

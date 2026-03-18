@@ -5,6 +5,7 @@ import { Mountain, Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useState, useEffect, useActionState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { login } from '@/lib/actions/auth';
+import { createClient } from '@/lib/supabase/client';
 
 const initialState = { error: undefined, success: false };
 
@@ -12,6 +13,16 @@ export default function LoginPage() {
   const { language, t } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
   const [state, formAction, isPending] = useActionState(login, initialState);
+
+  const handleOAuth = async (provider: 'google' | 'apple') => {
+    const supabase = createClient();
+    await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-950 via-brand-900 to-alpine-950 flex items-center justify-center p-4">
@@ -107,6 +118,7 @@ export default function LoginPage() {
               <button
                 key={provider}
                 type="button"
+                onClick={() => handleOAuth(provider.toLowerCase() as 'google' | 'apple')}
                 className="w-full flex items-center justify-center gap-3 border border-slate-200 text-slate-700 font-medium py-3 rounded-xl text-sm hover:bg-slate-50 transition-colors"
               >
                 {provider === 'Google' ? (
