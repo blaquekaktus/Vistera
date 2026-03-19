@@ -8,5 +8,5 @@ export default async function NewListingPage() {
 
   if (!user) redirect('/login?redirectTo=/dashboard/new-listing');
 
-  return <NewListingForm />;
+  return <NewListingForm userId={user.id} />;
 }

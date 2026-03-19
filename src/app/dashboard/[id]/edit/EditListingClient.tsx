@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { useFormState } from 'react-dom';
 import { SubmitButton } from '@/components/ui/SubmitButton';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 import Link from 'next/link';
 import { Mountain, ArrowLeft, AlertCircle, CheckCircle, Building2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -31,13 +33,15 @@ const sectionCls = 'bg-white rounded-2xl border border-slate-100 p-6 mb-5';
 interface Props {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   property: Record<string, any>;
+  userId: string;
 }
 
 const initialState = { error: undefined, success: false };
 
-export default function EditListingClient({ property }: Props) {
+export default function EditListingClient({ property, userId }: Props) {
   const { language } = useLanguage();
   const [state, formAction] = useFormState(updateListing, initialState);
+  const [images, setImages] = useState<string[]>(property.images ?? []);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -268,17 +272,17 @@ export default function EditListingClient({ property }: Props) {
 
           {/* ── Section 6: Images ────────────────────────────────── */}
           <div className={sectionCls}>
-            <h2 className="font-bold text-slate-900 mb-1">
+            <h2 className="font-bold text-slate-900 mb-4">
               {language === 'de' ? '6. Bilder' : '6. Images'}
             </h2>
-            <p className="text-xs text-slate-400 mb-4">
-              {language === 'de' ? 'Bild-URLs eingeben, eine pro Zeile' : 'Enter image URLs, one per line'}
-            </p>
-            <textarea
-              name="images"
-              rows={4}
-              defaultValue={(property.images ?? []).join('\n')}
-              className={inputCls}
+            <input type="hidden" name="images" value={images.join('\n')} />
+            <ImageUpload
+              bucket="property-images"
+              folder={userId}
+              value={images}
+              onChange={setImages}
+              maxFiles={12}
+              label={language === 'de' ? 'Bilder hochladen (max. 12)' : 'Upload images (max. 12)'}
             />
           </div>
 

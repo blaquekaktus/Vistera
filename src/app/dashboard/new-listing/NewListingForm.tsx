@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { useFormState } from 'react-dom';
 import { SubmitButton } from '@/components/ui/SubmitButton';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 import Link from 'next/link';
 import { Mountain, ArrowLeft, AlertCircle, Building2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -30,9 +32,10 @@ const inputCls = 'w-full border border-slate-200 rounded-xl px-4 py-3 text-sm fo
 const labelCls = 'block text-xs font-semibold text-slate-600 mb-1.5';
 const sectionCls = 'bg-white rounded-2xl border border-slate-100 p-6 mb-5';
 
-export default function NewListingForm() {
+export default function NewListingForm({ userId }: { userId: string }) {
   const { language } = useLanguage();
   const [state, formAction] = useFormState(createListing, initialState);
+  const [images, setImages] = useState<string[]>([]);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -252,19 +255,18 @@ export default function NewListingForm() {
 
           {/* ── Section 6: Images ────────────────────────────────── */}
           <div className={sectionCls}>
-            <h2 className="font-bold text-slate-900 mb-1">
+            <h2 className="font-bold text-slate-900 mb-4">
               {language === 'de' ? '6. Bilder' : '6. Images'}
             </h2>
-            <p className="text-xs text-slate-400 mb-4">
-              {language === 'de'
-                ? 'Bild-URLs eingeben, eine pro Zeile (z.B. von Unsplash)'
-                : 'Enter image URLs, one per line (e.g. from Unsplash)'}
-            </p>
-            <textarea
-              name="images"
-              rows={4}
-              className={inputCls}
-              placeholder="https://images.unsplash.com/photo-...&#10;https://images.unsplash.com/photo-..."
+            {/* Hidden input passes URLs to the server action (newline-separated, matching createListing) */}
+            <input type="hidden" name="images" value={images.join('\n')} />
+            <ImageUpload
+              bucket="property-images"
+              folder={userId}
+              value={images}
+              onChange={setImages}
+              maxFiles={12}
+              label={language === 'de' ? 'Bilder hochladen (max. 12)' : 'Upload images (max. 12)'}
             />
           </div>
 

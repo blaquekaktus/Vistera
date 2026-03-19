@@ -126,8 +126,9 @@ export async function updateProfile(prevState: AuthState, formData: FormData): P
     return { error: 'Nicht angemeldet.' };
   }
 
-  const name = formData.get('name') as string;
-  const phone = formData.get('phone') as string;
+  const name       = formData.get('name') as string;
+  const phone      = formData.get('phone') as string;
+  const avatarUrl  = formData.get('avatar_url') as string;
 
   if (!name) {
     return { error: 'Name ist erforderlich.' };
@@ -136,7 +137,7 @@ export async function updateProfile(prevState: AuthState, formData: FormData): P
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any)
     .from('profiles')
-    .update({ name, phone: phone || null })
+    .update({ name, phone: phone || null, avatar_url: avatarUrl || null })
     .eq('id', user.id);
 
   if (error) {

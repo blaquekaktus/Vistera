@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { useFormState } from 'react-dom';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 import { SubmitButton } from '@/components/ui/SubmitButton';
 import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
@@ -11,6 +13,7 @@ import { User, Mail, Phone, Briefcase, Star, AlertCircle, CheckCircle2, LogOut, 
 import { cn } from '@/lib/utils';
 
 interface Props {
+  userId: string;
   email: string;
   name: string;
   phone: string;
@@ -34,11 +37,12 @@ const roleLabel: Record<string, { de: string; en: string }> = {
 };
 
 export default function ProfileClient({
-  email, name, phone, role, avatarUrl, agency, bio, region, languages, agentRating, agentReviewCount,
+  userId, email, name, phone, role, avatarUrl, agency, bio, region, languages, agentRating, agentReviewCount,
 }: Props) {
   const { language } = useLanguage();
   const [state, formAction] = useFormState(updateProfile, initialState);
   const [agentState, agentFormAction] = useFormState(updateAgentProfile, initialState);
+  const [currentAvatar, setCurrentAvatar] = useState<string[]>(avatarUrl ? [avatarUrl] : []);
 
   const initials = name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
   const roleLabelText = roleLabel[role]?.[language] ?? role;
@@ -63,19 +67,23 @@ export default function ProfileClient({
 
           {/* Avatar + identity card */}
           <div className="bg-white rounded-2xl border border-slate-100 p-6 mb-5">
-            <div className="flex items-center gap-5">
-              {avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={avatarUrl}
-                  alt={name}
-                  className="w-16 h-16 rounded-full object-cover border-2 border-brand-100"
+            <div className="flex items-start gap-5">
+              <div className="flex-shrink-0">
+                {currentAvatar.length === 0 && (
+                  <div className="w-16 h-16 rounded-full bg-brand-600 flex items-center justify-center text-white text-xl font-bold mb-2">
+                    {initials || <User className="w-7 h-7" />}
+                  </div>
+                )}
+                <ImageUpload
+                  bucket="avatars"
+                  folder={userId}
+                  value={currentAvatar}
+                  onChange={setCurrentAvatar}
+                  maxFiles={1}
+                  accept="image/jpeg,image/png,image/webp"
+                  label={language === 'de' ? 'Profilbild' : 'Profile photo'}
                 />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-brand-600 flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
-                  {initials || <User className="w-7 h-7" />}
-                </div>
-              )}
+              </div>
               <div>
                 <div className="font-bold text-slate-900 text-lg">{name || email}</div>
                 <div className="flex items-center gap-2 mt-1">
@@ -120,6 +128,7 @@ export default function ProfileClient({
             )}
 
             <form action={formAction} className="flex flex-col gap-4">
+              <input type="hidden" name="avatar_url" value={currentAvatar[0] ?? ''} />
               {/* Email (read-only) */}
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5">

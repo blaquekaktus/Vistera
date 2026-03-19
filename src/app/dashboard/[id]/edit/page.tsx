@@ -22,5 +22,5 @@ export default async function EditListingPage({ params }: Props) {
 
   if (!property) notFound();
 
-  return <EditListingClient property={property} />;
+  return <EditListingClient property={property} userId={user.id} />;
 }

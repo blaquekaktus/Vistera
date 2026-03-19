@@ -3,6 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import {
+  sendInquiryConfirmation,
+  sendInquiryNotification,
+  sendReplyNotification,
+} from '@/lib/email';
 
 // ── Reply to inquiry ────────────────────────────────────────────────────────
 
@@ -23,6 +28,22 @@ export async function replyToInquiry(prevState: ReplyState, formData: FormData):
     return { error: 'Antwort darf nicht leer sein.' };
   }
 
+  // Fetch inquiry so we can email the sender and look up property title
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: inquiry } = await (supabase as any)
+    .from('inquiries')
+    .select('name, email, property:properties!property_id(title, title_de)')
+    .eq('id', inquiryId)
+    .eq('agent_id', user.id)
+    .single() as { data: Record<string, any> | null };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: agentProfile } = await (supabase as any)
+    .from('profiles')
+    .select('name')
+    .eq('id', user.id)
+    .single() as { data: { name: string } | null };
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error } = await (supabase as any)
     .from('inquiries')
@@ -32,11 +53,50 @@ export async function replyToInquiry(prevState: ReplyState, formData: FormData):
 
   if (error) return { error: error.message };
 
+  // Notify the inquiry sender (fire-and-forget)
+  if (inquiry) {
+    const propertyTitle = inquiry.property?.title_de ?? inquiry.property?.title ?? '';
+    sendReplyNotification({
+      to: inquiry.email,
+      senderName: inquiry.name,
+      agentName: agentProfile?.name ?? 'Ihr Makler',
+      propertyTitle,
+      replyMessage: message.trim(),
+    });
+  }
+
   revalidatePath('/dashboard/inquiries');
   return { success: true };
 }
 
-// ── Update listing ──────────────────────────────────────────────────────────
+// ── Update inquiry status (used by appointments page) ───────────────────────
+
+export async function updateInquiryStatus(prevState: ReplyState, formData: FormData): Promise<ReplyState> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Nicht angemeldet.' };
+
+  const inquiryId = formData.get('inquiry_id') as string;
+  const status    = formData.get('status') as string;
+
+  const VALID_STATUSES = ['new', 'read', 'responded', 'closed'];
+  if (!inquiryId || !VALID_STATUSES.includes(status)) {
+    return { error: 'Ungültige Anfrage.' };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any)
+    .from('inquiries')
+    .update({ status })
+    .eq('id', inquiryId)
+    .eq('agent_id', user.id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath('/dashboard/appointments');
+  return { success: true };
+}
+
 
 export interface UpdateListingState {
   error?: string;
@@ -177,6 +237,38 @@ export async function submitInquiry(prevState: InquiryState, formData: FormData)
       return { success: true };
     }
     return { error: error.message };
+  }
+
+  // Fetch property title + agent email for notifications
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: property } = await (supabase as any)
+    .from('properties')
+    .select('title, title_de, agent:profiles!agent_id(name)')
+    .eq('id', propertyId)
+    .single() as { data: Record<string, any> | null };
+
+  if (property) {
+    const propertyTitle = property.title_de ?? property.title ?? '';
+    // Confirm to sender
+    sendInquiryConfirmation({ to: email, senderName: name, propertyTitle });
+    // Notify agent (requires SUPABASE_SERVICE_ROLE_KEY to fetch auth email — skipped if not set)
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY && agentId) {
+      const { createClient: createAdmin } = await import('@supabase/supabase-js');
+      const admin = createAdmin(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+      );
+      const { data: agentUser } = await admin.auth.admin.getUserById(agentId);
+      if (agentUser.user?.email) {
+        sendInquiryNotification({
+          to: agentUser.user.email,
+          senderName: name,
+          senderEmail: email,
+          propertyTitle,
+          message: message ?? '',
+        });
+      }
+    }
   }
 
   return { success: true };
