@@ -39,79 +39,41 @@ export default async function DashboardPage() {
     .order('created_at', { ascending: false })
     .limit(4) as { data: Record<string, any>[] | null };
 
-  // Map DB rows to client props — fall back to mock data if Supabase not configured
-  let agentName: string;
-  let agentAgency: string;
-  let agentAvatar: string;
-  let agentRating: number;
-  let agentReviewCount: number;
-  let agentProperties: DashboardProperty[];
-  let recentInquiries: DashboardInquiry[];
+  // Map DB rows to typed client props (shared regardless of whether profile row exists)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const agentProperties: DashboardProperty[] = (dbProperties ?? []).map((p: Record<string, any>) => ({
+    id: p.id,
+    title: p.title,
+    titleDe: p.title_de ?? p.title,
+    images: p.images ?? [],
+    city: p.city,
+    country: p.country as 'AT' | 'DE' | 'CH',
+    price: Number(p.price),
+    currency: p.currency as 'EUR' | 'CHF',
+    vrViews: p.vr_views ?? 0,
+    hasVrTour: (p.vr_tours?.length ?? 0) > 0,
+  }));
 
-  if (profile) {
-    const ap = profile.agent_profiles as { agency?: string; rating?: number; review_count?: number } | null;
-    agentName = profile.name;
-    agentAgency = ap?.agency ?? '';
-    agentAvatar = profile.avatar_url ?? '';
-    agentRating = Number(ap?.rating ?? 0);
-    agentReviewCount = ap?.review_count ?? 0;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recentInquiries: DashboardInquiry[] = (dbInquiries ?? []).map((inq: Record<string, any>) => {
+    const prop = inq.property;
+    return {
+      id: inq.id,
+      name: inq.name,
+      email: inq.email,
+      propertyTitle: prop?.title_de ?? prop?.title ?? '',
+      type: inq.type,
+      createdAt: inq.created_at,
+    };
+  });
 
-    agentProperties = (dbProperties ?? []).map((p) => ({
-      id: p.id,
-      title: p.title,
-      titleDe: p.title_de ?? p.title,
-      images: p.images ?? [],
-      city: p.city,
-      country: p.country as 'AT' | 'DE' | 'CH',
-      price: Number(p.price),
-      currency: p.currency as 'EUR' | 'CHF',
-      vrViews: p.vr_views ?? 0,
-      hasVrTour: (p.vr_tours?.length ?? 0) > 0,
-    }));
-
-    recentInquiries = (dbInquiries ?? []).map((inq) => {
-      const prop = inq.property;
-      return {
-        id: inq.id,
-        name: inq.name,
-        email: inq.email,
-        propertyTitle: prop?.title_de ?? prop?.title ?? '',
-        type: inq.type,
-        createdAt: inq.created_at,
-      };
-    });
-  } else {
-    // Profile not yet available (trigger may not have fired yet for brand-new users)
-    // Use the authenticated user's data so we never show another user's data
-    agentName = user.user_metadata?.name ?? user.email ?? '';
-    agentAgency = '';
-    agentAvatar = '';
-    agentRating = 0;
-    agentReviewCount = 0;
-    agentProperties = (dbProperties ?? []).map((p) => ({
-      id: p.id,
-      title: p.title,
-      titleDe: p.title_de ?? p.title,
-      images: p.images ?? [],
-      city: p.city,
-      country: p.country as 'AT' | 'DE' | 'CH',
-      price: Number(p.price),
-      currency: p.currency as 'EUR' | 'CHF',
-      vrViews: p.vr_views ?? 0,
-      hasVrTour: (p.vr_tours?.length ?? 0) > 0,
-    }));
-    recentInquiries = (dbInquiries ?? []).map((inq) => {
-      const prop = inq.property;
-      return {
-        id: inq.id,
-        name: inq.name,
-        email: inq.email,
-        propertyTitle: prop?.title_de ?? prop?.title ?? '',
-        type: inq.type,
-        createdAt: inq.created_at,
-      };
-    });
-  }
+  // Profile-specific identity fields
+  const ap = profile?.agent_profiles as { agency?: string; rating?: number; review_count?: number } | null;
+  const agentName: string    = profile?.name ?? user.user_metadata?.name ?? user.email ?? '';
+  const agentAgency: string  = ap?.agency ?? '';
+  const agentAvatar: string  = profile?.avatar_url ?? '';
+  const agentRating: number  = Number(ap?.rating ?? 0);
+  const agentReviewCount: number = ap?.review_count ?? 0;
 
   return (
     <DashboardClient
