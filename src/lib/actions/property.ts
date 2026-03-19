@@ -56,7 +56,8 @@ export async function createListing(prevState: ListingState, formData: FormData)
     return { error: 'Nicht angemeldet.' };
   }
 
-  const title = formData.get('title') as string;
+  const titleDe = formData.get('title_de') as string;
+  const title = (formData.get('title') as string) || titleDe;
   const city = formData.get('city') as string;
   const country = formData.get('country') as string;
   const type = formData.get('type') as string;
@@ -64,7 +65,7 @@ export async function createListing(prevState: ListingState, formData: FormData)
   const price = formData.get('price') as string;
   const area = formData.get('area') as string;
 
-  if (!title || !city || !country || !type || !listingType || !price || !area) {
+  if (!titleDe || !city || !country || !type || !listingType || !price || !area) {
     return { error: 'Bitte alle Pflichtfelder ausfüllen.' };
   }
 
@@ -85,7 +86,7 @@ export async function createListing(prevState: ListingState, formData: FormData)
     .insert({
       agent_id: user.id,
       title,
-      title_de: (formData.get('title_de') as string) || title,
+      title_de: titleDe,
       description: (formData.get('description') as string) || null,
       description_de: (formData.get('description_de') as string) || null,
       type,
