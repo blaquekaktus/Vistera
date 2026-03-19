@@ -114,9 +114,10 @@ export interface Database {
           message: string | null;
           type: 'inquiry' | 'viewing' | 'vr_tour';
           status: 'new' | 'read' | 'responded' | 'closed';
+          reply_message: string | null;
           created_at: string;
         };
-        Insert: Omit<Database['public']['Tables']['inquiries']['Row'], 'id' | 'created_at' | 'status'>;
+        Insert: Omit<Database['public']['Tables']['inquiries']['Row'], 'id' | 'created_at' | 'status' | 'reply_message'>;
         Update: Partial<Database['public']['Tables']['inquiries']['Row']>;
       };
     };
