@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useFormState } from 'react-dom';
+import { SubmitButton } from '@/components/ui/SubmitButton';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -25,7 +26,7 @@ interface Props {
 export default function PropertyDetailClient({ property }: Props) {
   const { language, t } = useLanguage();
   const [activeImageIdx, setActiveImageIdx] = useState(0);
-  const [inquiryState, inquiryAction, isInquiryPending] = useActionState(submitInquiry, inquiryInitialState);
+  const [inquiryState, inquiryAction] = useFormState(submitInquiry, inquiryInitialState);
 
   const title = language === 'de' ? property.titleDe : property.title;
   const description = language === 'de' ? property.descriptionDe : property.description;
@@ -394,15 +395,12 @@ export default function PropertyDetailClient({ property }: Props) {
                           : 'I am interested in this property...'}
                         className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400 resize-none"
                       />
-                      <button
-                        type="submit"
-                        disabled={isInquiryPending}
+                      <SubmitButton
                         className="w-full bg-brand-600 text-white text-sm font-semibold py-3 rounded-xl hover:bg-brand-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                        pendingText={language === 'de' ? 'Wird gesendet...' : 'Sending...'}
                       >
-                        {isInquiryPending
-                          ? (language === 'de' ? 'Wird gesendet...' : 'Sending...')
-                          : (language === 'de' ? 'Anfrage senden' : 'Send Inquiry')}
-                      </button>
+                        {language === 'de' ? 'Anfrage senden' : 'Send Inquiry'}
+                      </SubmitButton>
                     </form>
                   )}
                 </div>

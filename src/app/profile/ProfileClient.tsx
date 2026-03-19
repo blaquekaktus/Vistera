@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useFormState } from 'react-dom';
+import { SubmitButton } from '@/components/ui/SubmitButton';
 import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
@@ -33,7 +34,7 @@ export default function ProfileClient({
   email, name, phone, role, avatarUrl, agency, agentRating, agentReviewCount,
 }: Props) {
   const { language } = useLanguage();
-  const [state, formAction, isPending] = useActionState(updateProfile, initialState);
+  const [state, formAction] = useFormState(updateProfile, initialState);
 
   const initials = name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
   const roleLabelText = roleLabel[role]?.[language] ?? role;
@@ -181,15 +182,12 @@ export default function ProfileClient({
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={isPending}
+              <SubmitButton
                 className="w-full bg-brand-600 text-white font-semibold py-3.5 rounded-xl hover:bg-brand-700 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+                pendingText={language === 'de' ? 'Wird gespeichert...' : 'Saving...'}
               >
-                {isPending
-                  ? (language === 'de' ? 'Wird gespeichert...' : 'Saving...')
-                  : (language === 'de' ? 'Änderungen speichern' : 'Save changes')}
-              </button>
+                {language === 'de' ? 'Änderungen speichern' : 'Save changes'}
+              </SubmitButton>
             </form>
           </div>
 

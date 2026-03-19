@@ -2,17 +2,19 @@
 
 import Link from 'next/link';
 import { Mountain, Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { useState, useEffect, useActionState } from 'react';
+import { useState, useEffect } from 'react';
+import { useFormState, useFormStatus } from 'react-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { login } from '@/lib/actions/auth';
 import { createClient } from '@/lib/supabase/client';
+import { SubmitButton } from '@/components/ui/SubmitButton';
 
 const initialState = { error: undefined, success: false };
 
 export default function LoginPage() {
   const { language, t } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
-  const [state, formAction, isPending] = useActionState(login, initialState);
+  const [state, formAction] = useFormState(login, initialState);
 
   const handleOAuth = async (provider: 'google' | 'apple') => {
     const supabase = createClient();
@@ -92,15 +94,12 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={isPending}
+            <SubmitButton
               className="w-full bg-brand-600 text-white font-semibold py-3.5 rounded-xl hover:bg-brand-700 transition-colors mt-1 shadow-lg shadow-brand-200 disabled:opacity-60 disabled:cursor-not-allowed"
+              pendingText={language === 'de' ? 'Wird angemeldet...' : 'Signing in...'}
             >
-              {isPending
-                ? (language === 'de' ? 'Wird angemeldet...' : 'Signing in...')
-                : t.auth.login.button}
-            </button>
+              {t.auth.login.button}
+            </SubmitButton>
           </form>
 
           <div className="relative my-6">

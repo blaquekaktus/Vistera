@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { Mountain, Mail, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { useActionState } from 'react';
+import { useFormState } from 'react-dom';
+import { SubmitButton } from '@/components/ui/SubmitButton';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { forgotPassword } from '@/lib/actions/auth';
 
@@ -10,7 +11,7 @@ const initialState = { error: undefined, success: false };
 
 export default function ForgotPasswordPage() {
   const { language } = useLanguage();
-  const [state, formAction, isPending] = useActionState(forgotPassword, initialState);
+  const [state, formAction] = useFormState(forgotPassword, initialState);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-950 via-brand-900 to-alpine-950 flex items-center justify-center p-4">
@@ -75,15 +76,12 @@ export default function ForgotPasswordPage() {
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isPending}
+                <SubmitButton
                   className="w-full bg-brand-600 text-white font-semibold py-3.5 rounded-xl hover:bg-brand-700 transition-colors shadow-lg shadow-brand-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                  pendingText={language === 'de' ? 'Wird gesendet...' : 'Sending...'}
                 >
-                  {isPending
-                    ? (language === 'de' ? 'Wird gesendet...' : 'Sending...')
-                    : (language === 'de' ? 'Link senden' : 'Send reset link')}
-                </button>
+                  {language === 'de' ? 'Link senden' : 'Send reset link'}
+                </SubmitButton>
               </form>
             </>
           )}

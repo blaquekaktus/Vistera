@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useFormState } from 'react-dom';
+import { SubmitButton } from '@/components/ui/SubmitButton';
 import Link from 'next/link';
 import { Mountain, ArrowLeft, AlertCircle, Building2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -31,7 +32,7 @@ const sectionCls = 'bg-white rounded-2xl border border-slate-100 p-6 mb-5';
 
 export default function NewListingPage() {
   const { language } = useLanguage();
-  const [state, formAction, isPending] = useActionState(createListing, initialState);
+  const [state, formAction] = useFormState(createListing, initialState);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -289,15 +290,12 @@ export default function NewListingPage() {
 
           {/* Submit */}
           <div className="flex items-center gap-4">
-            <button
-              type="submit"
-              disabled={isPending}
+            <SubmitButton
               className="flex-1 sm:flex-none sm:w-auto bg-brand-600 text-white font-semibold px-8 py-3.5 rounded-xl hover:bg-brand-700 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+              pendingText={language === 'de' ? 'Wird veröffentlicht...' : 'Publishing...'}
             >
-              {isPending
-                ? (language === 'de' ? 'Wird veröffentlicht...' : 'Publishing...')
-                : (language === 'de' ? 'Inserat veröffentlichen' : 'Publish Listing')}
-            </button>
+              {language === 'de' ? 'Inserat veröffentlichen' : 'Publish Listing'}
+            </SubmitButton>
             <Link
               href="/dashboard"
               className="text-sm text-slate-500 hover:text-slate-700 transition-colors"

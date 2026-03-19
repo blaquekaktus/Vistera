@@ -2,10 +2,12 @@
 
 import Link from 'next/link';
 import { Mountain, Eye, EyeOff, User, Briefcase, Home, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { useState, useActionState } from 'react';
+import { useState } from 'react';
+import { useFormState } from 'react-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { register } from '@/lib/actions/auth';
 import { cn } from '@/lib/utils';
+import { SubmitButton } from '@/components/ui/SubmitButton';
 
 type Role = 'buyer' | 'seller' | 'agent';
 
@@ -15,7 +17,7 @@ export default function RegisterPage() {
   const { language, t } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role>('buyer');
-  const [state, formAction, isPending] = useActionState(register, initialState);
+  const [state, formAction] = useFormState(register, initialState);
 
   const roles: { value: Role; label: string; icon: React.ElementType; desc: { de: string; en: string } }[] = [
     {
@@ -175,15 +177,12 @@ export default function RegisterPage() {
               {t.auth.register.agree}
             </p>
 
-            <button
-              type="submit"
-              disabled={isPending}
+            <SubmitButton
               className="w-full bg-brand-600 text-white font-semibold py-3.5 rounded-xl hover:bg-brand-700 transition-colors shadow-lg shadow-brand-200 disabled:opacity-60 disabled:cursor-not-allowed"
+              pendingText={language === 'de' ? 'Wird registriert...' : 'Creating account...'}
             >
-              {isPending
-                ? (language === 'de' ? 'Wird registriert...' : 'Creating account...')
-                : t.auth.register.button}
-            </button>
+              {t.auth.register.button}
+            </SubmitButton>
           </form>
 
           <p className="text-center text-sm text-slate-500 mt-6">
