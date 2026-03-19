@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useFormState } from 'react-dom';
 import Link from 'next/link';
 import { Mountain, ArrowLeft, MessageSquare, CheckCircle, AlertCircle, Mail, Phone } from 'lucide-react';
@@ -21,19 +22,21 @@ const TYPE_COLORS: Record<string, string> = {
   vr_tour: 'bg-purple-50 text-purple-700',
 };
 
-function ReplyForm({ inquiryId, replied }: { inquiryId: string; replied: boolean }) {
+function ReplyForm({
+  inquiryId,
+  replied,
+  existingReply,
+}: {
+  inquiryId: string;
+  replied: boolean;
+  existingReply: string | null;
+}) {
   const { language } = useLanguage();
   const [state, formAction] = useFormState(replyToInquiry, {});
+  const [editing, setEditing] = useState(false);
 
-  if (replied && !state.success) {
-    return (
-      <p className="text-xs text-green-600 font-medium mt-3">
-        {language === 'de' ? '✓ Bereits beantwortet' : '✓ Already replied'}
-      </p>
-    );
-  }
-
-  if (state.success) {
+  // After a successful submit in this session, show confirmation and reset edit mode
+  if (state.success && !editing) {
     return (
       <div className="flex items-center gap-2 mt-3 text-green-600 text-xs font-medium">
         <CheckCircle className="w-3.5 h-3.5" />
@@ -42,8 +45,26 @@ function ReplyForm({ inquiryId, replied }: { inquiryId: string; replied: boolean
     );
   }
 
+  // Already replied (from DB) and not in edit mode — show status + edit button
+  if (replied && !editing && !state.success) {
+    return (
+      <div className="flex items-center gap-3 mt-3">
+        <p className="text-xs text-green-600 font-medium">
+          {language === 'de' ? '✓ Bereits beantwortet' : '✓ Already replied'}
+        </p>
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="text-xs text-brand-600 hover:underline font-medium"
+        >
+          {language === 'de' ? 'Bearbeiten' : 'Edit'}
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <form action={formAction} className="mt-3">
+    <form action={formAction} className="mt-3" onSubmit={() => setEditing(false)}>
       <input type="hidden" name="inquiry_id" value={inquiryId} />
       {state.error && (
         <div className="flex items-center gap-1.5 text-red-600 text-xs mb-2">
@@ -55,15 +76,27 @@ function ReplyForm({ inquiryId, replied }: { inquiryId: string; replied: boolean
         name="reply_message"
         rows={3}
         required
+        defaultValue={editing && existingReply ? existingReply : ''}
         placeholder={language === 'de' ? 'Ihre Antwort...' : 'Your reply...'}
         className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400 transition-all resize-none"
       />
-      <SubmitButton
-        className="mt-2 bg-brand-600 text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-60"
-        pendingText={language === 'de' ? 'Wird gesendet...' : 'Sending...'}
-      >
-        {language === 'de' ? 'Antworten' : 'Send Reply'}
-      </SubmitButton>
+      <div className="flex items-center gap-2 mt-2">
+        <SubmitButton
+          className="bg-brand-600 text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-60"
+          pendingText={language === 'de' ? 'Wird gesendet...' : 'Sending...'}
+        >
+          {language === 'de' ? 'Antworten' : 'Send Reply'}
+        </SubmitButton>
+        {editing && (
+          <button
+            type="button"
+            onClick={() => setEditing(false)}
+            className="text-xs text-slate-400 hover:text-slate-600"
+          >
+            {language === 'de' ? 'Abbrechen' : 'Cancel'}
+          </button>
+        )}
+      </div>
     </form>
   );
 }
@@ -202,7 +235,11 @@ export default function InquiriesClient({ inquiries }: Props) {
                     )}
 
                     {/* Reply form */}
-                    <ReplyForm inquiryId={inquiry.id} replied={inquiry.status === 'responded' || inquiry.status === 'closed'} />
+                    <ReplyForm
+                      inquiryId={inquiry.id}
+                      replied={inquiry.status === 'responded' || inquiry.status === 'closed'}
+                      existingReply={inquiry.reply_message}
+                    />
                   </div>
                 </div>
               </div>

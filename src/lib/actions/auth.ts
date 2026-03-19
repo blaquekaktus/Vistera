@@ -58,7 +58,7 @@ export async function register(prevState: AuthState, formData: FormData): Promis
     password,
     options: {
       data: { name, role },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/callback`,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/auth/callback`,
     },
   });
 
@@ -144,5 +144,41 @@ export async function updateProfile(prevState: AuthState, formData: FormData): P
   }
 
   revalidatePath('/profile');
+  return { success: true };
+}
+
+export async function updateAgentProfile(prevState: AuthState, formData: FormData): Promise<AuthState> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: 'Nicht angemeldet.' };
+  }
+
+  const agency = formData.get('agency') as string;
+  const bio = (formData.get('bio') as string) || null;
+  const region = (formData.get('region') as string) || null;
+  const languagesRaw = (formData.get('languages') as string) || '';
+  const languages = languagesRaw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (!agency) {
+    return { error: 'Büroname ist erforderlich.' };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any)
+    .from('agent_profiles')
+    .update({ agency, bio, region, languages })
+    .eq('id', user.id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath('/profile');
+  revalidatePath('/dashboard');
   return { success: true };
 }

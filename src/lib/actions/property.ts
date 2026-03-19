@@ -107,6 +107,7 @@ export async function updateListing(prevState: UpdateListingState, formData: For
       cellar: formData.get('cellar') === 'on',
       amenities,
       images,
+      status: (formData.get('status') as string) || 'active',
     })
     .eq('id', id)
     .eq('agent_id', user.id); // enforce ownership
@@ -170,8 +171,9 @@ export async function submitInquiry(prevState: InquiryState, formData: FormData)
   });
 
   if (error) {
-    // If Supabase isn't configured yet, succeed silently so the UI works in dev
-    if (error.message?.includes('fetch') || error.message?.includes('JWT')) {
+    // Silently succeed only when Supabase is genuinely not configured (local dev without .env.local).
+    // A missing URL means the client was constructed with an empty string which causes a fetch error.
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL && error.message?.includes('fetch')) {
       return { success: true };
     }
     return { error: error.message };

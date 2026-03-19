@@ -3,9 +3,11 @@
 import { useFormState } from 'react-dom';
 import { SubmitButton } from '@/components/ui/SubmitButton';
 import Link from 'next/link';
-import { Mountain, ArrowLeft, AlertCircle, CheckCircle, Building2 } from 'lucide-react';
+import { Mountain, ArrowLeft, AlertCircle, Building2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { updateListing } from '@/lib/actions/property';
+import { createListing } from '@/lib/actions/property';
+
+const initialState = { error: undefined, success: false };
 
 const PROPERTY_TYPES = [
   { value: 'apartment', de: 'Wohnung', en: 'Apartment' },
@@ -28,19 +30,13 @@ const inputCls = 'w-full border border-slate-200 rounded-xl px-4 py-3 text-sm fo
 const labelCls = 'block text-xs font-semibold text-slate-600 mb-1.5';
 const sectionCls = 'bg-white rounded-2xl border border-slate-100 p-6 mb-5';
 
-interface Props {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  property: Record<string, any>;
-}
-
-const initialState = { error: undefined, success: false };
-
-export default function EditListingClient({ property }: Props) {
+export default function NewListingForm() {
   const { language } = useLanguage();
-  const [state, formAction] = useFormState(updateListing, initialState);
+  const [state, formAction] = useFormState(createListing, initialState);
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* Dashboard-style header */}
       <aside className="fixed left-0 top-0 h-full w-64 bg-slate-950 text-white z-40 hidden lg:flex flex-col">
         <Link href="/" className="flex items-center gap-2 px-6 py-5 border-b border-white/10">
           <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
@@ -60,10 +56,14 @@ export default function EditListingClient({ property }: Props) {
       </aside>
 
       <main className="lg:ml-64 p-6 max-w-3xl">
+        {/* Mobile back */}
         <div className="lg:hidden mb-4">
-          <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-brand-600">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-brand-600"
+          >
             <ArrowLeft className="w-4 h-4" />
-            Dashboard
+            {language === 'de' ? 'Dashboard' : 'Dashboard'}
           </Link>
         </div>
 
@@ -73,10 +73,10 @@ export default function EditListingClient({ property }: Props) {
           </div>
           <div>
             <h1 className="text-2xl font-black text-slate-900">
-              {language === 'de' ? 'Inserat bearbeiten' : 'Edit Listing'}
+              {language === 'de' ? 'Neues Inserat' : 'New Listing'}
             </h1>
             <p className="text-sm text-slate-500">
-              {property.title_de ?? property.title}
+              {language === 'de' ? 'Immobilie erfassen und veröffentlichen' : 'Add and publish a property'}
             </p>
           </div>
         </div>
@@ -88,16 +88,7 @@ export default function EditListingClient({ property }: Props) {
           </div>
         )}
 
-        {state.success && (
-          <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-xl mb-5">
-            <CheckCircle className="w-4 h-4 flex-shrink-0" />
-            {language === 'de' ? 'Inserat aktualisiert.' : 'Listing updated.'}
-          </div>
-        )}
-
         <form action={formAction}>
-          <input type="hidden" name="property_id" value={property.id} />
-
           {/* ── Section 1: Type ────────────────────────────────── */}
           <div className={sectionCls}>
             <h2 className="font-bold text-slate-900 mb-4">
@@ -106,7 +97,7 @@ export default function EditListingClient({ property }: Props) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelCls}>{language === 'de' ? 'Objekttyp *' : 'Property type *'}</label>
-                <select name="type" required defaultValue={property.type} className={inputCls}>
+                <select name="type" required className={inputCls}>
                   {PROPERTY_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>{language === 'de' ? t.de : t.en}</option>
                   ))}
@@ -114,18 +105,9 @@ export default function EditListingClient({ property }: Props) {
               </div>
               <div>
                 <label className={labelCls}>{language === 'de' ? 'Angebotsart *' : 'Listing type *'}</label>
-                <select name="listing_type" required defaultValue={property.listing_type} className={inputCls}>
+                <select name="listing_type" required className={inputCls}>
                   <option value="sale">{language === 'de' ? 'Verkauf' : 'For Sale'}</option>
                   <option value="rent">{language === 'de' ? 'Miete' : 'For Rent'}</option>
-                </select>
-              </div>
-              <div className="col-span-2">
-                <label className={labelCls}>{language === 'de' ? 'Status' : 'Status'}</label>
-                <select name="status" defaultValue={property.status ?? 'active'} className={inputCls}>
-                  <option value="active">{language === 'de' ? 'Aktiv' : 'Active'}</option>
-                  <option value="reserved">{language === 'de' ? 'Reserviert' : 'Reserved'}</option>
-                  <option value="sold">{language === 'de' ? 'Verkauft' : 'Sold'}</option>
-                  <option value="rented">{language === 'de' ? 'Vermietet' : 'Rented'}</option>
                 </select>
               </div>
             </div>
@@ -139,19 +121,19 @@ export default function EditListingClient({ property }: Props) {
             <div className="flex flex-col gap-4">
               <div>
                 <label className={labelCls}>{language === 'de' ? 'Titel (Deutsch) *' : 'Title (German) *'}</label>
-                <input name="title_de" type="text" required defaultValue={property.title_de ?? ''} className={inputCls} />
+                <input name="title_de" type="text" required placeholder="z.B. Luxuswohnung in Innsbruck" className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>{language === 'de' ? 'Titel (Englisch)' : 'Title (English)'}</label>
-                <input name="title" type="text" defaultValue={property.title ?? ''} className={inputCls} />
+                <input name="title" type="text" placeholder="e.g. Luxury apartment in Innsbruck" className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>{language === 'de' ? 'Beschreibung (Deutsch)' : 'Description (German)'}</label>
-                <textarea name="description_de" rows={3} defaultValue={property.description_de ?? ''} className={inputCls} />
+                <textarea name="description_de" rows={3} className={inputCls} placeholder="Objektbeschreibung auf Deutsch..." />
               </div>
               <div>
                 <label className={labelCls}>{language === 'de' ? 'Beschreibung (Englisch)' : 'Description (English)'}</label>
-                <textarea name="description" rows={3} defaultValue={property.description ?? ''} className={inputCls} />
+                <textarea name="description" rows={3} className={inputCls} placeholder="Property description in English..." />
               </div>
             </div>
           </div>
@@ -164,7 +146,7 @@ export default function EditListingClient({ property }: Props) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelCls}>{language === 'de' ? 'Land *' : 'Country *'}</label>
-                <select name="country" required defaultValue={property.country} className={inputCls}>
+                <select name="country" required className={inputCls}>
                   {COUNTRIES.map((c) => (
                     <option key={c.value} value={c.value}>{language === 'de' ? c.de : c.en}</option>
                   ))}
@@ -172,19 +154,19 @@ export default function EditListingClient({ property }: Props) {
               </div>
               <div>
                 <label className={labelCls}>{language === 'de' ? 'Stadt *' : 'City *'}</label>
-                <input name="city" type="text" required defaultValue={property.city ?? ''} className={inputCls} />
+                <input name="city" type="text" required placeholder="Innsbruck" className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>{language === 'de' ? 'Region / Bundesland' : 'Region / State'}</label>
-                <input name="region" type="text" defaultValue={property.region ?? ''} className={inputCls} />
+                <input name="region" type="text" placeholder="Tirol" className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>{language === 'de' ? 'PLZ' : 'Postal Code'}</label>
-                <input name="postal_code" type="text" defaultValue={property.postal_code ?? ''} className={inputCls} />
+                <input name="postal_code" type="text" placeholder="6020" className={inputCls} />
               </div>
               <div className="col-span-2">
                 <label className={labelCls}>{language === 'de' ? 'Straße & Hausnummer' : 'Street & Number'}</label>
-                <input name="street" type="text" defaultValue={property.street ?? ''} className={inputCls} />
+                <input name="street" type="text" placeholder="Innstraße 45" className={inputCls} />
               </div>
             </div>
           </div>
@@ -196,12 +178,17 @@ export default function EditListingClient({ property }: Props) {
             </h2>
             <div className="grid grid-cols-3 gap-4">
               <div className="col-span-2">
-                <label className={labelCls}>{language === 'de' ? 'Preis *' : 'Price *'}</label>
-                <input name="price" type="number" min="0" step="1" required defaultValue={property.price ?? ''} className={inputCls} />
+                <label className={labelCls}>
+                  {language === 'de' ? 'Preis *' : 'Price *'}
+                  <span className="text-slate-400 font-normal ml-1">
+                    ({language === 'de' ? 'Kauf: gesamt, Miete: monatlich' : 'Sale: total, Rent: monthly'})
+                  </span>
+                </label>
+                <input name="price" type="number" min="0" step="1" required placeholder="850000" className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>{language === 'de' ? 'Währung' : 'Currency'}</label>
-                <select name="currency" defaultValue={property.currency ?? 'EUR'} className={inputCls}>
+                <select name="currency" className={inputCls}>
                   <option value="EUR">EUR €</option>
                   <option value="CHF">CHF Fr.</option>
                 </select>
@@ -216,13 +203,13 @@ export default function EditListingClient({ property }: Props) {
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
               {[
-                { name: 'area', label: language === 'de' ? 'Wohnfläche m² *' : 'Living area m² *', required: true, val: property.area },
-                { name: 'rooms', label: language === 'de' ? 'Zimmer' : 'Rooms', val: property.rooms },
-                { name: 'bedrooms', label: language === 'de' ? 'Schlafzimmer' : 'Bedrooms', val: property.bedrooms },
-                { name: 'bathrooms', label: language === 'de' ? 'Badezimmer' : 'Bathrooms', val: property.bathrooms },
-                { name: 'year_built', label: language === 'de' ? 'Baujahr' : 'Year built', val: property.year_built },
-                { name: 'floor', label: language === 'de' ? 'Etage' : 'Floor', val: property.floor },
-                { name: 'total_floors', label: language === 'de' ? 'Stockwerke ges.' : 'Total floors', val: property.total_floors },
+                { name: 'area', label: language === 'de' ? 'Wohnfläche m² *' : 'Living area m² *', required: true, placeholder: '120' },
+                { name: 'rooms', label: language === 'de' ? 'Zimmer' : 'Rooms', placeholder: '4' },
+                { name: 'bedrooms', label: language === 'de' ? 'Schlafzimmer' : 'Bedrooms', placeholder: '2' },
+                { name: 'bathrooms', label: language === 'de' ? 'Badezimmer' : 'Bathrooms', placeholder: '1' },
+                { name: 'year_built', label: language === 'de' ? 'Baujahr' : 'Year built', placeholder: '2020' },
+                { name: 'floor', label: language === 'de' ? 'Etage' : 'Floor', placeholder: '3' },
+                { name: 'total_floors', label: language === 'de' ? 'Stockwerke ges.' : 'Total floors', placeholder: '5' },
               ].map((f) => (
                 <div key={f.name}>
                   <label className={labelCls}>{f.label}</label>
@@ -232,34 +219,31 @@ export default function EditListingClient({ property }: Props) {
                     min="0"
                     step="1"
                     required={f.required}
-                    defaultValue={f.val ?? ''}
+                    placeholder={f.placeholder}
                     className={inputCls}
                   />
                 </div>
               ))}
               <div>
                 <label className={labelCls}>{language === 'de' ? 'Energieklasse' : 'Energy class'}</label>
-                <select name="energy_class" defaultValue={property.energy_class ?? ''} className={inputCls}>
+                <select name="energy_class" className={inputCls}>
                   <option value="">—</option>
                   {ENERGY_CLASSES.map((e) => <option key={e} value={e}>{e}</option>)}
                 </select>
               </div>
             </div>
+
+            {/* Boolean features */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {[
-                { name: 'parking', de: 'Stellplatz', en: 'Parking', val: property.parking },
-                { name: 'elevator', de: 'Aufzug', en: 'Elevator', val: property.elevator },
-                { name: 'balcony', de: 'Balkon/Terrasse', en: 'Balcony/Terrace', val: property.balcony },
-                { name: 'garden', de: 'Garten', en: 'Garden', val: property.garden },
-                { name: 'cellar', de: 'Keller', en: 'Cellar', val: property.cellar },
+                { name: 'parking', de: 'Stellplatz', en: 'Parking' },
+                { name: 'elevator', de: 'Aufzug', en: 'Elevator' },
+                { name: 'balcony', de: 'Balkon/Terrasse', en: 'Balcony/Terrace' },
+                { name: 'garden', de: 'Garten', en: 'Garden' },
+                { name: 'cellar', de: 'Keller', en: 'Cellar' },
               ].map((feat) => (
                 <label key={feat.name} className="flex items-center gap-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name={feat.name}
-                    defaultChecked={!!feat.val}
-                    className="w-4 h-4 rounded border-slate-300 text-brand-600 accent-brand-600"
-                  />
+                  <input type="checkbox" name={feat.name} className="w-4 h-4 rounded border-slate-300 text-brand-600 accent-brand-600" />
                   <span className="text-sm text-slate-700">{language === 'de' ? feat.de : feat.en}</span>
                 </label>
               ))}
@@ -272,13 +256,15 @@ export default function EditListingClient({ property }: Props) {
               {language === 'de' ? '6. Bilder' : '6. Images'}
             </h2>
             <p className="text-xs text-slate-400 mb-4">
-              {language === 'de' ? 'Bild-URLs eingeben, eine pro Zeile' : 'Enter image URLs, one per line'}
+              {language === 'de'
+                ? 'Bild-URLs eingeben, eine pro Zeile (z.B. von Unsplash)'
+                : 'Enter image URLs, one per line (e.g. from Unsplash)'}
             </p>
             <textarea
               name="images"
               rows={4}
-              defaultValue={(property.images ?? []).join('\n')}
               className={inputCls}
+              placeholder="https://images.unsplash.com/photo-...&#10;https://images.unsplash.com/photo-..."
             />
           </div>
 
@@ -288,24 +274,32 @@ export default function EditListingClient({ property }: Props) {
               {language === 'de' ? '7. Ausstattung' : '7. Amenities'}
             </h2>
             <p className="text-xs text-slate-400 mb-4">
-              {language === 'de' ? 'Ein Ausstattungsmerkmal pro Zeile' : 'One amenity per line'}
+              {language === 'de'
+                ? 'Ein Ausstattungsmerkmal pro Zeile'
+                : 'One amenity per line'}
             </p>
             <textarea
               name="amenities"
               rows={4}
-              defaultValue={(property.amenities ?? []).join('\n')}
               className={inputCls}
+              placeholder={language === 'de'
+                ? 'Concierge\nTiefgarage\nSauna\nFitnessraum'
+                : 'Concierge\nUnderground garage\nSauna\nGym'}
             />
           </div>
 
+          {/* Submit */}
           <div className="flex items-center gap-4">
             <SubmitButton
               className="flex-1 sm:flex-none sm:w-auto bg-brand-600 text-white font-semibold px-8 py-3.5 rounded-xl hover:bg-brand-700 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-              pendingText={language === 'de' ? 'Wird gespeichert...' : 'Saving...'}
+              pendingText={language === 'de' ? 'Wird veröffentlicht...' : 'Publishing...'}
             >
-              {language === 'de' ? 'Änderungen speichern' : 'Save Changes'}
+              {language === 'de' ? 'Inserat veröffentlichen' : 'Publish Listing'}
             </SubmitButton>
-            <Link href="/dashboard" className="text-sm text-slate-500 hover:text-slate-700 transition-colors">
+            <Link
+              href="/dashboard"
+              className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
+            >
               {language === 'de' ? 'Abbrechen' : 'Cancel'}
             </Link>
           </div>

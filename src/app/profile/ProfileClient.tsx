@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { updateProfile, logout } from '@/lib/actions/auth';
+import { updateProfile, updateAgentProfile, logout } from '@/lib/actions/auth';
 import { User, Mail, Phone, Briefcase, Star, AlertCircle, CheckCircle2, LogOut, LayoutDashboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -17,6 +17,9 @@ interface Props {
   role: string;
   avatarUrl: string;
   agency: string;
+  bio: string;
+  region: string;
+  languages: string;
   agentRating: number;
   agentReviewCount: number;
 }
@@ -31,10 +34,11 @@ const roleLabel: Record<string, { de: string; en: string }> = {
 };
 
 export default function ProfileClient({
-  email, name, phone, role, avatarUrl, agency, agentRating, agentReviewCount,
+  email, name, phone, role, avatarUrl, agency, bio, region, languages, agentRating, agentReviewCount,
 }: Props) {
   const { language } = useLanguage();
   const [state, formAction] = useFormState(updateProfile, initialState);
+  const [agentState, agentFormAction] = useFormState(updateAgentProfile, initialState);
 
   const initials = name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
   const roleLabelText = roleLabel[role]?.[language] ?? role;
@@ -162,26 +166,6 @@ export default function ProfileClient({
                 />
               </div>
 
-              {role === 'agent' && (
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">
-                    <Briefcase className="w-3.5 h-3.5 inline mr-1" />
-                    {language === 'de' ? 'Maklerbüro' : 'Agency'}
-                  </label>
-                  <input
-                    type="text"
-                    value={agency}
-                    readOnly
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-slate-50 text-slate-400 cursor-not-allowed"
-                  />
-                  <p className="text-xs text-slate-400 mt-1">
-                    {language === 'de'
-                      ? 'Bürodaten können nur vom Support geändert werden.'
-                      : 'Agency details can only be changed by support.'}
-                  </p>
-                </div>
-              )}
-
               <SubmitButton
                 className="w-full bg-brand-600 text-white font-semibold py-3.5 rounded-xl hover:bg-brand-700 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed mt-2"
                 pendingText={language === 'de' ? 'Wird gespeichert...' : 'Saving...'}
@@ -190,6 +174,93 @@ export default function ProfileClient({
               </SubmitButton>
             </form>
           </div>
+
+          {role === 'agent' && (
+            <div className="bg-white rounded-2xl border border-slate-100 p-6 mb-5">
+              <h2 className="font-bold text-slate-900 mb-5">
+                {language === 'de' ? 'Makler-Profil' : 'Agent Profile'}
+              </h2>
+
+              {agentState.success && (
+                <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-xl mb-4">
+                  <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                  {language === 'de' ? 'Profil gespeichert.' : 'Profile saved.'}
+                </div>
+              )}
+              {agentState.error && (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl mb-4">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  {agentState.error}
+                </div>
+              )}
+
+              <form action={agentFormAction} className="flex flex-col gap-4">
+                <div>
+                  <label htmlFor="agency" className="block text-xs font-semibold text-slate-600 mb-1.5">
+                    <Briefcase className="w-3.5 h-3.5 inline mr-1" />
+                    {language === 'de' ? 'Büroname *' : 'Agency name *'}
+                  </label>
+                  <input
+                    id="agency"
+                    name="agency"
+                    type="text"
+                    defaultValue={agency}
+                    required
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="region" className="block text-xs font-semibold text-slate-600 mb-1.5">
+                    {language === 'de' ? 'Region / Bundesland' : 'Region / State'}
+                  </label>
+                  <input
+                    id="region"
+                    name="region"
+                    type="text"
+                    defaultValue={region}
+                    placeholder={language === 'de' ? 'z.B. Tirol' : 'e.g. Tyrol'}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="bio" className="block text-xs font-semibold text-slate-600 mb-1.5">
+                    {language === 'de' ? 'Kurzbiografie' : 'Short bio'}
+                  </label>
+                  <textarea
+                    id="bio"
+                    name="bio"
+                    rows={3}
+                    defaultValue={bio}
+                    placeholder={language === 'de' ? 'Kurze Vorstellung...' : 'Brief introduction...'}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400 resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="languages" className="block text-xs font-semibold text-slate-600 mb-1.5">
+                    {language === 'de' ? 'Sprachen (kommagetrennt)' : 'Languages (comma-separated)'}
+                  </label>
+                  <input
+                    id="languages"
+                    name="languages"
+                    type="text"
+                    defaultValue={languages}
+                    placeholder="Deutsch, English, Français"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400"
+                  />
+                </div>
+
+                <SubmitButton
+                  className="w-full bg-brand-600 text-white font-semibold py-3.5 rounded-xl hover:bg-brand-700 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+                  pendingText={language === 'de' ? 'Wird gespeichert...' : 'Saving...'}
+                >
+                  {language === 'de' ? 'Makler-Profil speichern' : 'Save Agent Profile'}
+                </SubmitButton>
+              </form>
+            </div>
+          )}
 
           {/* Sign out */}
           <div className="bg-white rounded-2xl border border-slate-100 p-6">
