@@ -6,32 +6,35 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "seed": "npx tsx supabase/seed.ts"
   },
   "dependencies": {
+    "@hookform/resolvers": "^3.9.0",
+    "@supabase/ssr": "^0.9.0",
+    "@supabase/supabase-js": "^2.99.2",
+    "clsx": "^2.1.1",
+    "date-fns": "^3.6.0",
+    "framer-motion": "^11.3.8",
+    "lucide-react": "^0.408.0",
     "next": "14.2.5",
     "react": "^18",
     "react-dom": "^18",
-    "three": "^0.167.0",
-    "framer-motion": "^11.3.8",
-    "lucide-react": "^0.408.0",
-    "clsx": "^2.1.1",
-    "tailwind-merge": "^2.4.0",
-    "date-fns": "^3.6.0",
     "react-hook-form": "^7.52.1",
-    "zod": "^3.23.8",
-    "@hookform/resolvers": "^3.9.0"
+    "tailwind-merge": "^2.4.0",
+    "three": "^0.167.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
-    "typescript": "^5",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/three": "^0.167.0",
-    "tailwindcss": "^3.4.1",
-    "postcss": "^8",
     "autoprefixer": "^10.0.1",
     "eslint": "^8",
-    "eslint-config-next": "14.2.5"
+    "eslint-config-next": "14.2.5",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
   }
 }

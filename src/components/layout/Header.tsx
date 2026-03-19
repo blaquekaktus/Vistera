@@ -2,19 +2,38 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Menu, X, Globe, Mountain } from 'lucide-react';
+import { Menu, X, Globe, Mountain, LayoutDashboard } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
+import type { User } from '@supabase/supabase-js';
 
 export function Header() {
   const { language, setLanguage, t } = useLanguage();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    // Get initial session
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+
+    // Subscribe to auth state changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const navLinks = [
@@ -79,22 +98,34 @@ export function Header() {
               {language === 'de' ? 'DE' : 'EN'}
             </button>
 
-            <Link
-              href="/login"
-              className={cn(
-                'text-sm font-medium transition-colors',
-                isScrolled ? 'text-slate-700 hover:text-brand-600' : 'text-white/90 hover:text-white'
-              )}
-            >
-              {t.nav.login}
-            </Link>
+            {user ? (
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-1.5 text-sm font-semibold bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 transition-colors shadow-sm"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                {language === 'de' ? 'Dashboard' : 'Dashboard'}
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className={cn(
+                    'text-sm font-medium transition-colors',
+                    isScrolled ? 'text-slate-700 hover:text-brand-600' : 'text-white/90 hover:text-white'
+                  )}
+                >
+                  {t.nav.login}
+                </Link>
 
-            <Link
-              href="/register"
-              className="text-sm font-semibold bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 transition-colors shadow-sm"
-            >
-              {t.nav.register}
-            </Link>
+                <Link
+                  href="/register"
+                  className="text-sm font-semibold bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700 transition-colors shadow-sm"
+                >
+                  {t.nav.register}
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile hamburger */}
@@ -135,20 +166,33 @@ export function Header() {
                 </Link>
               ))}
               <hr className="my-2 border-slate-100" />
-              <Link
-                href="/login"
-                onClick={() => setIsMenuOpen(false)}
-                className="text-sm font-medium text-slate-700 hover:bg-slate-50 px-3 py-2.5 rounded-lg transition-colors"
-              >
-                {t.nav.login}
-              </Link>
-              <Link
-                href="/register"
-                onClick={() => setIsMenuOpen(false)}
-                className="text-sm font-semibold bg-brand-600 text-white px-3 py-2.5 rounded-lg text-center hover:bg-brand-700 transition-colors"
-              >
-                {t.nav.register}
-              </Link>
+              {user ? (
+                <Link
+                  href="/dashboard"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center gap-2 text-sm font-semibold bg-brand-600 text-white px-3 py-2.5 rounded-lg text-center hover:bg-brand-700 transition-colors"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="text-sm font-medium text-slate-700 hover:bg-slate-50 px-3 py-2.5 rounded-lg transition-colors"
+                  >
+                    {t.nav.login}
+                  </Link>
+                  <Link
+                    href="/register"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="text-sm font-semibold bg-brand-600 text-white px-3 py-2.5 rounded-lg text-center hover:bg-brand-700 transition-colors"
+                  >
+                    {t.nav.register}
+                  </Link>
+                </>
+              )}
             </nav>
           </div>
         )}

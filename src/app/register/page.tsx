@@ -1,28 +1,23 @@
 'use client';
 
 import Link from 'next/link';
-import { Mountain, Eye, EyeOff, User, Briefcase, Home } from 'lucide-react';
+import { Mountain, Eye, EyeOff, User, Briefcase, Home, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
+import { useFormState } from 'react-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { register } from '@/lib/actions/auth';
 import { cn } from '@/lib/utils';
+import { SubmitButton } from '@/components/ui/SubmitButton';
 
 type Role = 'buyer' | 'seller' | 'agent';
+
+const initialState = { error: undefined, success: false };
 
 export default function RegisterPage() {
   const { language, t } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role>('buyer');
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Auth logic would go here
-  };
+  const [state, formAction] = useFormState(register, initialState);
 
   const roles: { value: Role; label: string; icon: React.ElementType; desc: { de: string; en: string } }[] = [
     {
@@ -60,6 +55,24 @@ export default function RegisterPage() {
           <h1 className="text-2xl font-black text-slate-900 mb-1">{t.auth.register.title}</h1>
           <p className="text-sm text-slate-500 mb-6">{t.auth.register.subtitle}</p>
 
+          {/* Success */}
+          {state.success && (
+            <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-xl mb-4">
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+              {language === 'de'
+                ? 'Konto erstellt! Bitte prüfen Sie Ihre E-Mails zur Bestätigung.'
+                : 'Account created! Please check your email to confirm.'}
+            </div>
+          )}
+
+          {/* Error */}
+          {state.error && (
+            <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl mb-4">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              {state.error}
+            </div>
+          )}
+
           {/* Role selector */}
           <div className="grid grid-cols-3 gap-2 mb-6">
             {roles.map((role) => {
@@ -86,17 +99,20 @@ export default function RegisterPage() {
             })}
           </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form action={formAction} className="flex flex-col gap-4">
+            {/* Hidden role input */}
+            <input type="hidden" name="role" value={selectedRole} />
+
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5">
                 {t.auth.register.name}
               </label>
               <input
                 type="text"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                name="name"
                 placeholder={language === 'de' ? 'Max Mustermann' : 'John Doe'}
                 required
+                autoComplete="name"
                 className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400"
               />
             </div>
@@ -107,10 +123,10 @@ export default function RegisterPage() {
               </label>
               <input
                 type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                name="email"
                 placeholder="name@example.com"
                 required
+                autoComplete="email"
                 className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400"
               />
             </div>
@@ -122,11 +138,11 @@ export default function RegisterPage() {
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  name="password"
                   placeholder="••••••••"
                   required
                   minLength={8}
+                  autoComplete="new-password"
                   className="w-full border border-slate-200 rounded-xl px-4 py-3 pr-11 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400"
                 />
                 <button
@@ -145,10 +161,10 @@ export default function RegisterPage() {
               </label>
               <input
                 type="password"
-                value={form.confirmPassword}
-                onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                name="confirmPassword"
                 placeholder="••••••••"
                 required
+                autoComplete="new-password"
                 className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400"
               />
             </div>
@@ -161,12 +177,12 @@ export default function RegisterPage() {
               {t.auth.register.agree}
             </p>
 
-            <button
-              type="submit"
-              className="w-full bg-brand-600 text-white font-semibold py-3.5 rounded-xl hover:bg-brand-700 transition-colors shadow-lg shadow-brand-200"
+            <SubmitButton
+              className="w-full bg-brand-600 text-white font-semibold py-3.5 rounded-xl hover:bg-brand-700 transition-colors shadow-lg shadow-brand-200 disabled:opacity-60 disabled:cursor-not-allowed"
+              pendingText={language === 'de' ? 'Wird registriert...' : 'Creating account...'}
             >
               {t.auth.register.button}
-            </button>
+            </SubmitButton>
           </form>
 
           <p className="text-center text-sm text-slate-500 mt-6">

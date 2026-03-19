@@ -1,19 +1,29 @@
 'use client';
 
 import Link from 'next/link';
-import { Mountain, Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
+import { Mountain, Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useFormState, useFormStatus } from 'react-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { login } from '@/lib/actions/auth';
+import { createClient } from '@/lib/supabase/client';
+import { SubmitButton } from '@/components/ui/SubmitButton';
+
+const initialState = { error: undefined, success: false };
 
 export default function LoginPage() {
   const { language, t } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [state, formAction] = useFormState(login, initialState);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Auth logic would go here
+  const handleOAuth = async (provider: 'google' | 'apple') => {
+    const supabase = createClient();
+    await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
   };
 
   return (
@@ -31,24 +41,33 @@ export default function LoginPage() {
           <h1 className="text-2xl font-black text-slate-900 mb-1">{t.auth.login.title}</h1>
           <p className="text-sm text-slate-500 mb-6">{t.auth.login.subtitle}</p>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {/* Error */}
+          {state.error && (
+            <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl mb-4">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              {state.error}
+            </div>
+          )}
+
+          <form action={formAction} className="flex flex-col gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+              <label htmlFor="email" className="block text-xs font-semibold text-slate-600 mb-1.5">
                 {t.auth.login.email}
               </label>
               <input
+                id="email"
+                name="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
                 required
+                autoComplete="email"
                 className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400 transition-all"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-semibold text-slate-600">
+                <label htmlFor="password" className="text-xs font-semibold text-slate-600">
                   {t.auth.login.password}
                 </label>
                 <Link href="/forgot-password" className="text-xs text-brand-600 hover:text-brand-700">
@@ -57,11 +76,12 @@ export default function LoginPage() {
               </div>
               <div className="relative">
                 <input
+                  id="password"
+                  name="password"
                   type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
+                  autoComplete="current-password"
                   className="w-full border border-slate-200 rounded-xl px-4 py-3 pr-11 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400 transition-all"
                 />
                 <button
@@ -74,12 +94,12 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <button
-              type="submit"
-              className="w-full bg-brand-600 text-white font-semibold py-3.5 rounded-xl hover:bg-brand-700 transition-colors mt-1 shadow-lg shadow-brand-200"
+            <SubmitButton
+              className="w-full bg-brand-600 text-white font-semibold py-3.5 rounded-xl hover:bg-brand-700 transition-colors mt-1 shadow-lg shadow-brand-200 disabled:opacity-60 disabled:cursor-not-allowed"
+              pendingText={language === 'de' ? 'Wird angemeldet...' : 'Signing in...'}
             >
               {t.auth.login.button}
-            </button>
+            </SubmitButton>
           </form>
 
           <div className="relative my-6">
@@ -96,6 +116,8 @@ export default function LoginPage() {
             {['Google', 'Apple'].map((provider) => (
               <button
                 key={provider}
+                type="button"
+                onClick={() => handleOAuth(provider.toLowerCase() as 'google' | 'apple')}
                 className="w-full flex items-center justify-center gap-3 border border-slate-200 text-slate-700 font-medium py-3 rounded-xl text-sm hover:bg-slate-50 transition-colors"
               >
                 {provider === 'Google' ? (
