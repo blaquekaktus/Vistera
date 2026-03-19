@@ -3,16 +3,27 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const PROTECTED_ROUTES = ['/dashboard', '/profile'];
+// These paths start with a protected prefix but must stay publicly accessible
+const PUBLIC_EXCEPTIONS = ['/profile/reset-password'];
 const AUTH_ROUTES = ['/login', '/register'];
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // If Supabase isn't configured (e.g. during a bare CI build), skip auth checks
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    return NextResponse.next({ request: { headers: request.headers } });
+  }
+
   let response = NextResponse.next({
     request: { headers: request.headers },
   });
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         getAll() {
@@ -36,10 +47,10 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
-
   // Redirect unauthenticated users away from protected routes
-  if (!user && PROTECTED_ROUTES.some((r) => pathname.startsWith(r))) {
+  const isProtected = PROTECTED_ROUTES.some((r) => pathname.startsWith(r));
+  const isException = PUBLIC_EXCEPTIONS.some((r) => pathname.startsWith(r));
+  if (!user && isProtected && !isException) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = '/login';
     redirectUrl.searchParams.set('redirectTo', pathname);

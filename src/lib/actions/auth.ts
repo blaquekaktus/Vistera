@@ -58,7 +58,7 @@ export async function register(prevState: AuthState, formData: FormData): Promis
     password,
     options: {
       data: { name, role },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/callback`,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/auth/callback`,
     },
   });
 
