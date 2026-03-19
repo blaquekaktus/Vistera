@@ -71,15 +71,16 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-### 4. Run the database migration
+### 4. Run the database migrations
 
-In your [Supabase dashboard](https://app.supabase.com), open **SQL Editor** and run the migration file:
+In your [Supabase dashboard](https://app.supabase.com), open **SQL Editor** and run the migration files **in order**:
 
 ```
-supabase/migrations/001_initial_schema.sql
+supabase/migrations/001_initial_schema.sql   ← tables, RLS, triggers
+supabase/migrations/003_inquiry_reply.sql    ← adds reply_message to inquiries
 ```
 
-This creates all tables, enums, indexes, Row Level Security policies, and triggers (including the auto-profile trigger on sign-up).
+`001` creates all tables, enums, indexes, Row Level Security policies, and triggers (including the auto-profile trigger on sign-up). `003` adds the `reply_message` column used by the agent reply system.
 
 > **Alternatively**, if you have the [Supabase CLI](https://supabase.com/docs/guides/cli) installed and linked to your project:
 > ```bash

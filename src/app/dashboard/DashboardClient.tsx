@@ -4,11 +4,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
   Building2, Eye, MessageSquare, Calendar, Plus, TrendingUp,
-  MoreHorizontal, Play, Star, ArrowUpRight, Mountain, LogOut,
+  Play, Star, ArrowUpRight, Mountain, LogOut, Pencil, Trash2,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { formatPrice, getCountryFlag } from '@/lib/utils';
 import { logout } from '@/lib/actions/auth';
+import { deleteListing } from '@/lib/actions/property';
 
 export interface DashboardProperty {
   id: string;
@@ -244,7 +245,7 @@ export default function DashboardClient({
                           {flag} {property.city} · {formatPrice(property.price, property.currency, language)}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         {property.hasVrTour && (
                           <Link
                             href={`/properties/${property.id}/tour`}
@@ -254,13 +255,32 @@ export default function DashboardClient({
                             <Play className="w-3.5 h-3.5" />
                           </Link>
                         )}
-                        <div className="flex items-center gap-1 text-xs text-slate-400">
+                        <div className="flex items-center gap-1 text-xs text-slate-400 mr-1">
                           <Eye className="w-3.5 h-3.5" />
                           <span>{property.vrViews}</span>
                         </div>
-                        <button className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </button>
+                        <Link
+                          href={`/dashboard/${property.id}/edit`}
+                          className="p-1.5 text-slate-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 transition-colors"
+                          title={language === 'de' ? 'Bearbeiten' : 'Edit'}
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Link>
+                        <form action={deleteListing}>
+                          <input type="hidden" name="property_id" value={property.id} />
+                          <button
+                            type="submit"
+                            className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
+                            title={language === 'de' ? 'Löschen' : 'Delete'}
+                            onClick={(e) => {
+                              if (!confirm(language === 'de' ? 'Inserat wirklich löschen?' : 'Delete this listing?')) {
+                                e.preventDefault();
+                              }
+                            }}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </form>
                       </div>
                     </div>
                   );
@@ -305,9 +325,12 @@ export default function DashboardClient({
                         </span>
                       </div>
                     </div>
-                    <button className="text-xs bg-slate-50 hover:bg-slate-100 text-slate-600 px-2.5 py-1.5 rounded-lg font-medium transition-colors flex-shrink-0">
+                    <Link
+                      href={`/dashboard/inquiries`}
+                      className="text-xs bg-slate-50 hover:bg-slate-100 text-slate-600 px-2.5 py-1.5 rounded-lg font-medium transition-colors flex-shrink-0"
+                    >
                       {language === 'de' ? 'Antworten' : 'Reply'}
-                    </button>
+                    </Link>
                   </div>
                 ))
               )}
