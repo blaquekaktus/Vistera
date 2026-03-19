@@ -27,6 +27,9 @@ export default async function ProfilePage() {
       role={profile?.role ?? 'buyer'}
       avatarUrl={profile?.avatar_url ?? ''}
       agency={ap?.agency ?? ''}
+      bio={ap?.bio ?? ''}
+      region={ap?.region ?? ''}
+      languages={(ap?.languages ?? []).join(', ')}
       agentRating={Number(ap?.rating ?? 0)}
       agentReviewCount={ap?.review_count ?? 0}
     />

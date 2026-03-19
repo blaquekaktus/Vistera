@@ -107,6 +107,7 @@ export async function updateListing(prevState: UpdateListingState, formData: For
       cellar: formData.get('cellar') === 'on',
       amenities,
       images,
+      status: (formData.get('status') as string) || 'active',
     })
     .eq('id', id)
     .eq('agent_id', user.id); // enforce ownership

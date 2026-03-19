@@ -7,6 +7,7 @@ import {
   Play, Star, ArrowUpRight, Mountain, LogOut, Pencil, Trash2,
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { usePathname } from 'next/navigation';
 import { formatPrice, getCountryFlag } from '@/lib/utils';
 import { logout } from '@/lib/actions/auth';
 import { deleteListing } from '@/lib/actions/property';
@@ -53,6 +54,7 @@ export default function DashboardClient({
   recentInquiries,
 }: Props) {
   const { language, t } = useLanguage();
+  const pathname = usePathname();
 
   const stats = [
     {
@@ -125,23 +127,39 @@ export default function DashboardClient({
         {/* Nav */}
         <nav className="flex-1 p-4 flex flex-col gap-1">
           {[
-            { icon: Building2, label: language === 'de' ? 'Übersicht' : 'Overview', active: true },
-            { icon: Building2, label: language === 'de' ? 'Meine Inserate' : 'My Listings', active: false },
-            { icon: Eye, label: language === 'de' ? 'VR-Touren' : 'VR Tours', active: false },
-            { icon: MessageSquare, label: language === 'de' ? 'Anfragen' : 'Inquiries', active: false },
-            { icon: Calendar, label: language === 'de' ? 'Termine' : 'Appointments', active: false },
-            { icon: TrendingUp, label: language === 'de' ? 'Analytics' : 'Analytics', active: false },
-          ].map((item) => (
-            <button
-              key={item.label}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                item.active ? 'bg-brand-600 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              <item.icon className="w-4 h-4" />
-              {item.label}
-            </button>
-          ))}
+            { icon: Building2, labelDe: 'Übersicht', labelEn: 'Overview', href: '/dashboard' },
+            { icon: Building2, labelDe: 'Meine Inserate', labelEn: 'My Listings', href: '/dashboard' },
+            { icon: Eye, labelDe: 'VR-Touren', labelEn: 'VR Tours', href: '/properties' },
+            { icon: MessageSquare, labelDe: 'Anfragen', labelEn: 'Inquiries', href: '/dashboard/inquiries' },
+            { icon: Calendar, labelDe: 'Termine', labelEn: 'Appointments', disabled: true },
+            { icon: TrendingUp, labelDe: 'Analytics', labelEn: 'Analytics', disabled: true },
+          ].map((item) => {
+            const label = language === 'de' ? item.labelDe : item.labelEn;
+            const isActive = item.href ? pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href)) : false;
+            const baseCls = 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors';
+            if (item.disabled) {
+              return (
+                <span
+                  key={label}
+                  title={language === 'de' ? 'Demnächst' : 'Coming soon'}
+                  className={`${baseCls} opacity-40 cursor-not-allowed text-white/60`}
+                >
+                  <item.icon className="w-4 h-4" />
+                  {label}
+                </span>
+              );
+            }
+            return (
+              <Link
+                key={label}
+                href={item.href!}
+                className={`${baseCls} ${isActive ? 'bg-brand-600 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
+              >
+                <item.icon className="w-4 h-4" />
+                {label}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Rating */}
