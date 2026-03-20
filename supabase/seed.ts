@@ -63,6 +63,7 @@ async function run() {
 
       if (error) {
         console.error(`    ❌ ${error.message}`);
+        if ((error as any).cause) console.error(`       cause: ${JSON.stringify((error as any).cause)}`);
         continue;
       }
 
