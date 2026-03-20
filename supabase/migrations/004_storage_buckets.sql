@@ -1,6 +1,7 @@
 -- ============================================================
 -- Vistera – Storage Buckets & RLS Policies
 -- Run in Supabase SQL Editor or via: supabase db push
+-- Fully idempotent: safe to run multiple times
 -- ============================================================
 
 -- ── Buckets ─────────────────────────────────────────────────
@@ -13,19 +14,23 @@ ON CONFLICT (id) DO NOTHING;
 
 -- ── RLS policies ─────────────────────────────────────────────
 -- Public read for all three buckets
+DROP POLICY IF EXISTS "Public read – property-images" ON storage.objects;
 CREATE POLICY "Public read – property-images"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'property-images');
 
+DROP POLICY IF EXISTS "Public read – panoramas" ON storage.objects;
 CREATE POLICY "Public read – panoramas"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'panoramas');
 
+DROP POLICY IF EXISTS "Public read – avatars" ON storage.objects;
 CREATE POLICY "Public read – avatars"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'avatars');
 
 -- Authenticated upload: path must start with the user's UID
+DROP POLICY IF EXISTS "Auth upload – property-images" ON storage.objects;
 CREATE POLICY "Auth upload – property-images"
   ON storage.objects FOR INSERT
   WITH CHECK (
@@ -34,6 +39,7 @@ CREATE POLICY "Auth upload – property-images"
     AND (storage.foldername(name))[1] = auth.uid()::text
   );
 
+DROP POLICY IF EXISTS "Auth upload – panoramas" ON storage.objects;
 CREATE POLICY "Auth upload – panoramas"
   ON storage.objects FOR INSERT
   WITH CHECK (
@@ -42,6 +48,7 @@ CREATE POLICY "Auth upload – panoramas"
     AND (storage.foldername(name))[1] = auth.uid()::text
   );
 
+DROP POLICY IF EXISTS "Auth upload – avatars" ON storage.objects;
 CREATE POLICY "Auth upload – avatars"
   ON storage.objects FOR INSERT
   WITH CHECK (
@@ -51,6 +58,7 @@ CREATE POLICY "Auth upload – avatars"
   );
 
 -- Authenticated update/replace own files
+DROP POLICY IF EXISTS "Auth update – property-images" ON storage.objects;
 CREATE POLICY "Auth update – property-images"
   ON storage.objects FOR UPDATE
   USING (
@@ -59,6 +67,7 @@ CREATE POLICY "Auth update – property-images"
     AND (storage.foldername(name))[1] = auth.uid()::text
   );
 
+DROP POLICY IF EXISTS "Auth update – panoramas" ON storage.objects;
 CREATE POLICY "Auth update – panoramas"
   ON storage.objects FOR UPDATE
   USING (
@@ -67,6 +76,7 @@ CREATE POLICY "Auth update – panoramas"
     AND (storage.foldername(name))[1] = auth.uid()::text
   );
 
+DROP POLICY IF EXISTS "Auth update – avatars" ON storage.objects;
 CREATE POLICY "Auth update – avatars"
   ON storage.objects FOR UPDATE
   USING (
@@ -76,6 +86,7 @@ CREATE POLICY "Auth update – avatars"
   );
 
 -- Authenticated delete own files
+DROP POLICY IF EXISTS "Auth delete – property-images" ON storage.objects;
 CREATE POLICY "Auth delete – property-images"
   ON storage.objects FOR DELETE
   USING (
@@ -84,6 +95,7 @@ CREATE POLICY "Auth delete – property-images"
     AND (storage.foldername(name))[1] = auth.uid()::text
   );
 
+DROP POLICY IF EXISTS "Auth delete – panoramas" ON storage.objects;
 CREATE POLICY "Auth delete – panoramas"
   ON storage.objects FOR DELETE
   USING (
@@ -92,6 +104,7 @@ CREATE POLICY "Auth delete – panoramas"
     AND (storage.foldername(name))[1] = auth.uid()::text
   );
 
+DROP POLICY IF EXISTS "Auth delete – avatars" ON storage.objects;
 CREATE POLICY "Auth delete – avatars"
   ON storage.objects FOR DELETE
   USING (
