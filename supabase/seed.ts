@@ -35,6 +35,18 @@ const supabase = createClient(url, key, {
 async function run() {
   console.log('🌱  Seeding Vistera database…\n');
 
+  // ── 0. Pre-flight: verify migrations have been applied ──────────────────────
+  const { error: preflightErr } = await (supabase as any)
+    .from('profiles')
+    .select('id')
+    .limit(1);
+  if (preflightErr) {
+    console.error('❌  Pre-flight failed — migrations may not have been applied.');
+    console.error(`   ${preflightErr.message}`);
+    process.exit(1);
+  }
+  console.log('✅  Database schema verified.\n');
+
   // ── 1. Create agent auth users ──────────────────────────────────────────────
   const agentIdMap: Record<string, string> = {};
 
@@ -62,8 +74,7 @@ async function run() {
       });
 
       if (error) {
-        console.error(`    ❌ ${error.message}`);
-        if ((error as any).cause) console.error(`       cause: ${JSON.stringify((error as any).cause)}`);
+        console.error(`    ❌ ${JSON.stringify(error)}`);
         continue;
       }
 
