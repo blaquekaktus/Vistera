@@ -8,15 +8,16 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ── Enums ───────────────────────────────────────────────────
-CREATE TYPE IF NOT EXISTS user_role       AS ENUM ('buyer', 'seller', 'agent', 'admin');
-CREATE TYPE IF NOT EXISTS property_type   AS ENUM ('apartment', 'house', 'villa', 'chalet', 'penthouse', 'commercial');
-CREATE TYPE IF NOT EXISTS listing_type    AS ENUM ('sale', 'rent');
-CREATE TYPE IF NOT EXISTS property_status AS ENUM ('active', 'reserved', 'sold', 'rented');
-CREATE TYPE IF NOT EXISTS currency_code   AS ENUM ('EUR', 'CHF');
-CREATE TYPE IF NOT EXISTS country_code    AS ENUM ('AT', 'DE', 'CH');
-CREATE TYPE IF NOT EXISTS inquiry_type    AS ENUM ('inquiry', 'viewing', 'vr_tour');
-CREATE TYPE IF NOT EXISTS inquiry_status  AS ENUM ('new', 'read', 'responded', 'closed');
-CREATE TYPE IF NOT EXISTS agent_plan      AS ENUM ('starter', 'professional', 'enterprise');
+-- CREATE TYPE has no IF NOT EXISTS; use exception blocks instead
+DO $$ BEGIN CREATE TYPE user_role       AS ENUM ('buyer', 'seller', 'agent', 'admin');        EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE property_type   AS ENUM ('apartment', 'house', 'villa', 'chalet', 'penthouse', 'commercial'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE listing_type    AS ENUM ('sale', 'rent');                              EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE property_status AS ENUM ('active', 'reserved', 'sold', 'rented');     EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE currency_code   AS ENUM ('EUR', 'CHF');                               EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE country_code    AS ENUM ('AT', 'DE', 'CH');                           EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE inquiry_type    AS ENUM ('inquiry', 'viewing', 'vr_tour');            EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE inquiry_status  AS ENUM ('new', 'read', 'responded', 'closed');       EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE agent_plan      AS ENUM ('starter', 'professional', 'enterprise');    EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- ── Profiles ────────────────────────────────────────────────
 -- Extends auth.users — created automatically on sign-up via trigger
