@@ -102,7 +102,7 @@ export default function EditListingClient({ property, userId }: Props) {
           </div>
         )}
 
-        <form action={formAction}>
+        <form action={formAction} noValidate>
           <input type="hidden" name="property_id" value={property.id} />
 
           {/* ── Section 1: Type ────────────────────────────────── */}
