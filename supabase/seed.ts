@@ -13,6 +13,10 @@
  *   npx tsx supabase/seed.ts
  */
 
+import { config } from 'dotenv';
+import { resolve } from 'path';
+config({ path: resolve(process.cwd(), '.env.local') });
+
 import { createClient } from '@supabase/supabase-js';
 import { agents, properties } from '../src/lib/data';
 
