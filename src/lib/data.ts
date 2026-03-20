@@ -599,7 +599,7 @@ export const testimonials: Testimonial[] = [
     location: 'Kitzbühel, Österreich',
     text: 'Als Verkäuferin wollte ich Interessenten anziehen, ohne mein Haus mit unzähligen Besichtigungen zu überfluten. Die VR-Tour hat genau das erreicht – wir hatten nur 4 echte Besichtigungen und haben dann verkauft!',
     textDe: 'Als Verkäuferin wollte ich Interessenten anziehen, ohne mein Haus mit unzähligen Besichtigungen zu überfluten. Die VR-Tour hat genau das erreicht – wir hatten nur 4 echte Besichtigungen und haben dann verkauft!',
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b2e5?w=60&h=60&fit=crop&crop=face',
+    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=60&h=60&fit=crop&crop=face',
     rating: 5,
   },
   {
