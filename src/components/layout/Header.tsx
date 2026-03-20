@@ -137,7 +137,7 @@ export function Header() {
                 isScrolled ? 'text-slate-600' : 'text-white/90'
               )}
             >
-              {language === 'de' ? 'EN' : 'DE'}
+              {language === 'de' ? 'DE' : 'EN'}
             </button>
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}

@@ -69,13 +69,15 @@ export default function PropertyDetailClient({ property }: Props) {
             <div className="lg:col-span-2 space-y-6">
               {/* Main image */}
               <div className="relative rounded-2xl overflow-hidden bg-slate-200 aspect-[16/9]">
-                <Image
-                  src={property.images[activeImageIdx]}
-                  alt={title}
-                  fill
-                  className="object-cover"
-                  priority
-                />
+                {property.images.length > 0 && (
+                  <Image
+                    src={property.images[activeImageIdx]}
+                    alt={title}
+                    fill
+                    className="object-cover"
+                    priority
+                  />
+                )}
                 {/* Type badge */}
                 <div className="absolute top-4 left-4 bg-brand-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">
                   {typeLabel[property.type][language]}

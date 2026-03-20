@@ -4,6 +4,15 @@
  * Set RESEND_FROM_EMAIL to customise the sender (default: noreply@vistera.at).
  */
 
+function escHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 async function send({ to, subject, html }: { to: string; subject: string; html: string }) {
   const key = process.env.RESEND_API_KEY;
   if (!key) return; // not configured — skip silently in dev
@@ -37,10 +46,10 @@ export async function sendInquiryConfirmation({
 }) {
   await send({
     to,
-    subject: `Ihre Anfrage ist eingegangen – ${propertyTitle}`,
+    subject: `Ihre Anfrage ist eingegangen – ${escHtml(propertyTitle)}`,
     html: `
-      <p>Hallo ${senderName},</p>
-      <p>Vielen Dank für Ihre Anfrage zu <strong>${propertyTitle}</strong>.</p>
+      <p>Hallo ${escHtml(senderName)},</p>
+      <p>Vielen Dank für Ihre Anfrage zu <strong>${escHtml(propertyTitle)}</strong>.</p>
       <p>Der Makler wird sich in Kürze bei Ihnen melden.</p>
       <p>Mit freundlichen Grüßen,<br/>Das Vistera-Team</p>
     `,
@@ -64,12 +73,12 @@ export async function sendInquiryNotification({
 }) {
   await send({
     to,
-    subject: `Neue Anfrage: ${propertyTitle}`,
+    subject: `Neue Anfrage: ${escHtml(propertyTitle)}`,
     html: `
-      <p>Sie haben eine neue Anfrage zu <strong>${propertyTitle}</strong> erhalten.</p>
-      <p><strong>Von:</strong> ${senderName} (${senderEmail})</p>
+      <p>Sie haben eine neue Anfrage zu <strong>${escHtml(propertyTitle)}</strong> erhalten.</p>
+      <p><strong>Von:</strong> ${escHtml(senderName)} (${escHtml(senderEmail)})</p>
       <p><strong>Nachricht:</strong></p>
-      <blockquote>${message}</blockquote>
+      <blockquote>${escHtml(message)}</blockquote>
       <p><a href="${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/dashboard/inquiries">Zur Anfragen-Übersicht →</a></p>
     `,
   });
@@ -92,11 +101,11 @@ export async function sendReplyNotification({
 }) {
   await send({
     to,
-    subject: `Antwort auf Ihre Anfrage – ${propertyTitle}`,
+    subject: `Antwort auf Ihre Anfrage – ${escHtml(propertyTitle)}`,
     html: `
-      <p>Hallo ${senderName},</p>
-      <p>${agentName} hat auf Ihre Anfrage zu <strong>${propertyTitle}</strong> geantwortet:</p>
-      <blockquote>${replyMessage}</blockquote>
+      <p>Hallo ${escHtml(senderName)},</p>
+      <p>${escHtml(agentName)} hat auf Ihre Anfrage zu <strong>${escHtml(propertyTitle)}</strong> geantwortet:</p>
+      <blockquote>${escHtml(replyMessage)}</blockquote>
       <p>Mit freundlichen Grüßen,<br/>Das Vistera-Team</p>
     `,
   });

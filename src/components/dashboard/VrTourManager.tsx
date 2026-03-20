@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Eye, Trash2, Plus, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { ImageUpload } from '@/components/ui/ImageUpload';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useRouter } from 'next/navigation';
 import { addVrTour, deleteVrTour } from '@/lib/actions/vr';
 
 export interface VrTour {
@@ -28,10 +29,12 @@ function TourRow({
   tour,
   propertyId,
   language,
+  onDeleted,
 }: {
   tour: VrTour;
   propertyId: string;
   language: string;
+  onDeleted: (id: string) => void;
 }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -42,8 +45,16 @@ function TourRow({
     fd.append('tour_id', tour.id);
     fd.append('property_id', propertyId);
     startTransition(async () => {
-      const result = await deleteVrTour({}, fd);
-      if (result.error) setError(result.error);
+      try {
+        const result = await deleteVrTour({}, fd);
+        if (result.error) {
+          setError(result.error);
+        } else {
+          onDeleted(tour.id);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      }
     });
   };
 
@@ -104,10 +115,12 @@ function AddTourForm({
   propertyId,
   userId,
   language,
+  onAdded,
 }: {
   propertyId: string;
   userId: string;
   language: string;
+  onAdded: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
   const [panorama, setPanorama] = useState<string[]>([]);
@@ -128,14 +141,19 @@ function AddTourForm({
     fd.append('room_name', roomName.trim());
 
     startTransition(async () => {
-      const result = await addVrTour({}, fd);
-      if (result.error) {
-        setError(result.error);
-      } else {
-        setSuccess(true);
-        setPanorama([]);
-        setRoomNameDe('');
-        setRoomName('');
+      try {
+        const result = await addVrTour({}, fd);
+        if (result.error) {
+          setError(result.error);
+        } else {
+          setSuccess(true);
+          setPanorama([]);
+          setRoomNameDe('');
+          setRoomName('');
+          onAdded();
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
       }
     });
   };
@@ -241,10 +259,21 @@ interface Props {
 
 export function VrTourManager({ propertyId, userId, initialTours }: Props) {
   const { language } = useLanguage();
+  const router = useRouter();
+  const [tours, setTours] = useState<VrTour[]>(initialTours);
+
+  const handleAdded = () => {
+    router.refresh();
+  };
+
+  const handleDeleted = (id: string) => {
+    setTours((prev) => prev.filter((t) => t.id !== id));
+    router.refresh();
+  };
 
   return (
     <div>
-      {initialTours.length === 0 ? (
+      {tours.length === 0 ? (
         <p className="text-sm text-slate-400 mb-2">
           {language === 'de'
             ? 'Noch keine VR-Räume hinzugefügt.'
@@ -252,18 +281,19 @@ export function VrTourManager({ propertyId, userId, initialTours }: Props) {
         </p>
       ) : (
         <div className="flex flex-col gap-2 mb-2">
-          {initialTours.map((tour) => (
+          {tours.map((tour) => (
             <TourRow
               key={tour.id}
               tour={tour}
               propertyId={propertyId}
               language={language}
+              onDeleted={handleDeleted}
             />
           ))}
         </div>
       )}
 
-      <AddTourForm propertyId={propertyId} userId={userId} language={language} />
+      <AddTourForm propertyId={propertyId} userId={userId} language={language} onAdded={handleAdded} />
     </div>
   );
 }

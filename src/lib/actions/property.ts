@@ -53,10 +53,10 @@ export async function replyToInquiry(prevState: ReplyState, formData: FormData):
 
   if (error) return { error: error.message };
 
-  // Notify the inquiry sender (fire-and-forget)
+  // Notify the inquiry sender (fire-and-forget — email failures must not break the action)
   if (inquiry) {
     const propertyTitle = inquiry.property?.title_de ?? inquiry.property?.title ?? '';
-    sendReplyNotification({
+    await sendReplyNotification({
       to: inquiry.email,
       senderName: inquiry.name,
       agentName: agentProfile?.name ?? 'Ihr Makler',
