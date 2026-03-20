@@ -12,9 +12,6 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- ── RLS policies ─────────────────────────────────────────────
--- Enable RLS on storage.objects (Supabase enables it by default, this is a safety net)
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
-
 -- Public read for all three buckets
 CREATE POLICY "Public read – property-images"
   ON storage.objects FOR SELECT
