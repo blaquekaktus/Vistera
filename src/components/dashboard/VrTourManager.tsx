@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { useFormState } from 'react-dom';
 import Image from 'next/image';
 import { Eye, Trash2, Plus, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
@@ -32,7 +32,19 @@ function TourRow({
   propertyId: string;
   language: string;
 }) {
-  const [state, formAction] = useFormState(deleteVrTour, {});
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const handleDelete = () => {
+    setError(null);
+    const fd = new FormData();
+    fd.append('tour_id', tour.id);
+    fd.append('property_id', propertyId);
+    startTransition(async () => {
+      const result = await deleteVrTour({}, fd);
+      if (result.error) setError(result.error);
+    });
+  };
 
   return (
     <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
@@ -65,21 +77,25 @@ function TourRow({
       </div>
 
       {/* Error feedback */}
-      {state.error && (
-        <span className="text-xs text-red-600 flex-shrink-0">{state.error}</span>
+      {error && (
+        <span className="text-xs text-red-600 flex-shrink-0">{error}</span>
       )}
 
-      {/* Delete */}
-      <form action={formAction} className="flex-shrink-0">
-        <input type="hidden" name="tour_id"     value={tour.id} />
-        <input type="hidden" name="property_id" value={propertyId} />
-        <SubmitButton
-          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-60"
-          pendingText=""
-        >
-          <Trash2 className="w-4 h-4" />
-        </SubmitButton>
-      </form>
+      {/* Delete — plain button to avoid nested-form issue (this component lives
+          inside the parent edit <form>, so a child <form> would be ignored by
+          the browser). useTransition calls the server action directly instead. */}
+      <button
+        type="button"
+        onClick={handleDelete}
+        disabled={isPending}
+        className="flex-shrink-0 p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-60"
+        title={language === 'de' ? 'Raum löschen' : 'Delete room'}
+      >
+        {isPending
+          ? <Loader2 className="w-4 h-4 animate-spin" />
+          : <Trash2 className="w-4 h-4" />
+        }
+      </button>
     </div>
   );
 }
