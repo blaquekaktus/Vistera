@@ -13,8 +13,8 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { formatPrice, getCountryFlag, getCountryName, cn } from '@/lib/utils';
-import { useState } from 'react';
-import { submitInquiry } from '@/lib/actions/property';
+import { useState, useEffect } from 'react';
+import { submitInquiry, incrementViews } from '@/lib/actions/property';
 import type { Property } from '@/lib/types';
 
 const inquiryInitialState = { error: undefined, success: false };
@@ -27,6 +27,11 @@ export default function PropertyDetailClient({ property }: Props) {
   const { language, t } = useLanguage();
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [inquiryState, inquiryAction] = useFormState(submitInquiry, inquiryInitialState);
+
+  // Track page view on mount
+  useEffect(() => {
+    incrementViews(property.id).catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const title = language === 'de' ? property.titleDe : property.title;
   const description = language === 'de' ? property.descriptionDe : property.description;

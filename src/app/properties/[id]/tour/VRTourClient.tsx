@@ -7,6 +7,7 @@ import { ArrowLeft, ChevronRight, ChevronLeft } from 'lucide-react';
 import { VRTourViewer } from '@/components/vr/VRTourViewer';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
+import { incrementVrViews } from '@/lib/actions/property';
 import type { Property, VRTour } from '@/lib/types';
 
 interface Props {
@@ -26,6 +27,11 @@ export default function VRTourClient({ property, initialRoomId }: Props) {
       : property.vrTours[0];
     setActiveTour(initialTour);
   }, [property, initialRoomId]);
+
+  // Count this as a VR view when the tour is first opened
+  useEffect(() => {
+    incrementVrViews(property.id).catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const currentIdx = activeTour ? property.vrTours.findIndex((t) => t.id === activeTour.id) : 0;
 

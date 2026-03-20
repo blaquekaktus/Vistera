@@ -9,6 +9,22 @@ import {
   sendReplyNotification,
 } from '@/lib/email';
 
+// ── Increment view counters ──────────────────────────────────────────────────
+
+export async function incrementVrViews(propertyId: string): Promise<void> {
+  if (!propertyId) return;
+  const supabase = createClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase as any).rpc('increment_vr_views', { p_id: propertyId });
+}
+
+export async function incrementViews(propertyId: string): Promise<void> {
+  if (!propertyId) return;
+  const supabase = createClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase as any).rpc('increment_views', { p_id: propertyId });
+}
+
 // ── Reply to inquiry ────────────────────────────────────────────────────────
 
 export interface ReplyState {
