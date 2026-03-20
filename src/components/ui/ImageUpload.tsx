@@ -13,6 +13,8 @@ interface Props {
   /** Currently saved public URLs */
   value: string[];
   onChange: (urls: string[]) => void;
+  /** Called whenever the uploading state changes — use to block form submission */
+  onUploadingChange?: (uploading: boolean) => void;
   maxFiles?: number;
   /** Accept string for <input type="file"> e.g. "image/*" or ".jpg,.jpeg,.png,.webp" */
   accept?: string;
@@ -24,6 +26,7 @@ export function ImageUpload({
   folder,
   value,
   onChange,
+  onUploadingChange,
   maxFiles = 10,
   accept = 'image/jpeg,image/png,image/webp',
   label,
@@ -37,9 +40,14 @@ export function ImageUpload({
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   );
 
+  function setUploadingState(val: boolean) {
+    setUploading(val);
+    onUploadingChange?.(val);
+  }
+
   async function handleFiles(files: FileList) {
     if (!files.length) return;
-    setUploading(true);
+    setUploadingState(true);
     setError(null);
 
     const newUrls: string[] = [];
@@ -62,6 +70,7 @@ export function ImageUpload({
         .upload(path, file, { cacheControl: '3600', upsert: false });
 
       if (uploadError) {
+        console.error('[ImageUpload] Storage upload error:', uploadError);
         setError(uploadError.message);
         continue;
       }
@@ -71,7 +80,7 @@ export function ImageUpload({
     }
 
     onChange([...value, ...newUrls].slice(0, maxFiles));
-    setUploading(false);
+    setUploadingState(false);
     // Reset input so same file can be re-selected
     if (inputRef.current) inputRef.current.value = '';
   }

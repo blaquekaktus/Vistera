@@ -44,6 +44,7 @@ export default function EditListingClient({ property, userId }: Props) {
   const { language } = useLanguage();
   const [state, formAction] = useFormState(updateListing, initialState);
   const [images, setImages] = useState<string[]>(property.images ?? []);
+  const [imagesUploading, setImagesUploading] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -283,6 +284,7 @@ export default function EditListingClient({ property, userId }: Props) {
               folder={userId}
               value={images}
               onChange={setImages}
+              onUploadingChange={setImagesUploading}
               maxFiles={12}
               label={language === 'de' ? 'Bilder hochladen (max. 12)' : 'Upload images (max. 12)'}
             />
@@ -332,8 +334,11 @@ export default function EditListingClient({ property, userId }: Props) {
             <SubmitButton
               className="flex-1 sm:flex-none sm:w-auto bg-brand-600 text-white font-semibold px-8 py-3.5 rounded-xl hover:bg-brand-700 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
               pendingText={language === 'de' ? 'Wird gespeichert...' : 'Saving...'}
+              disabled={imagesUploading}
             >
-              {language === 'de' ? 'Änderungen speichern' : 'Save Changes'}
+              {imagesUploading
+                ? (language === 'de' ? 'Bilder werden hochgeladen…' : 'Uploading images…')
+                : (language === 'de' ? 'Änderungen speichern' : 'Save Changes')}
             </SubmitButton>
             <Link href="/dashboard" className="text-sm text-slate-500 hover:text-slate-700 transition-colors">
               {language === 'de' ? 'Abbrechen' : 'Cancel'}
