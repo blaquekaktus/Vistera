@@ -84,14 +84,19 @@ async function run() {
 
     agentIdMap[agent.id] = userId;
 
-    // Update profile (trigger auto-creates it, but with partial data)
-    await (supabase as any)
+    // Upsert profile (service role bypasses RLS; handles case where trigger didn't fire)
+    const { error: profileErr } = await (supabase as any)
       .from('profiles')
-      .update({ name: agent.name, phone: agent.phone })
-      .eq('id', userId);
+      .upsert({
+        id: userId,
+        name: agent.name,
+        role: 'agent',
+        phone: agent.phone,
+      });
+    if (profileErr) console.warn(`    ⚠️  Profile upsert: ${profileErr.message}`);
 
     // Upsert agent_profile
-    await (supabase as any)
+    const { error: agentProfileErr } = await (supabase as any)
       .from('agent_profiles')
       .upsert({
         id: userId,
@@ -101,6 +106,7 @@ async function run() {
         rating: agent.rating,
         review_count: agent.reviewCount,
       });
+    if (agentProfileErr) console.warn(`    ⚠️  Agent profile upsert: ${agentProfileErr.message}`);
   }
 
   console.log('');

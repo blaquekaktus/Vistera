@@ -159,27 +159,33 @@ RETURNS TRIGGER AS $$
 DECLARE
   v_role user_role;
 BEGIN
-  v_role := COALESCE(
-    (NEW.raw_user_meta_data->>'role')::user_role,
-    'buyer'::user_role
-  );
+  BEGIN
+    v_role := COALESCE(
+      (NEW.raw_user_meta_data->>'role')::user_role,
+      'buyer'::user_role
+    );
 
-  INSERT INTO public.profiles (id, name, role, avatar_url)
-  VALUES (
-    NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
-    v_role,
-    NEW.raw_user_meta_data->>'avatar_url'
-  );
-
-  -- If registering as agent, create agent profile too
-  IF v_role = 'agent'::user_role THEN
-    INSERT INTO public.agent_profiles (id, agency)
+    INSERT INTO public.profiles (id, name, role, avatar_url)
     VALUES (
       NEW.id,
-      COALESCE(NEW.raw_user_meta_data->>'agency', 'Mein Maklerbüro')
-    );
-  END IF;
+      COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
+      v_role,
+      NEW.raw_user_meta_data->>'avatar_url'
+    )
+    ON CONFLICT (id) DO NOTHING;
+
+    IF v_role = 'agent'::user_role THEN
+      INSERT INTO public.agent_profiles (id, agency)
+      VALUES (
+        NEW.id,
+        COALESCE(NEW.raw_user_meta_data->>'agency', 'Mein Maklerbüro')
+      )
+      ON CONFLICT (id) DO NOTHING;
+    END IF;
+  EXCEPTION WHEN OTHERS THEN
+    -- Never block user creation due to profile trigger errors
+    NULL;
+  END;
 
   RETURN NEW;
 END;
