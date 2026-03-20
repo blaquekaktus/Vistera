@@ -1,11 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
-import { useFormState } from 'react-dom';
+import { useState, useTransition } from 'react';
 import Image from 'next/image';
 import { Eye, Trash2, Plus, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { ImageUpload } from '@/components/ui/ImageUpload';
-import { SubmitButton } from '@/components/ui/SubmitButton';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { addVrTour, deleteVrTour } from '@/lib/actions/vr';
 
@@ -22,6 +20,9 @@ const inputCls =
   'w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-400 transition-all bg-white';
 
 // ── Single-tour delete row ───────────────────────────────────────────────────
+// NOTE: this component lives inside the parent edit <form>. To avoid the
+// "nested form" browser restriction we call the server action directly via
+// useTransition instead of wrapping the button in its own <form>.
 
 function TourRow({
   tour,
@@ -57,7 +58,6 @@ function TourRow({
           className="object-cover"
           unoptimized
         />
-        {/* 360° badge */}
         <div className="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-md flex items-center gap-1">
           <Eye className="w-2.5 h-2.5" />
           360°
@@ -76,14 +76,10 @@ function TourRow({
         )}
       </div>
 
-      {/* Error feedback */}
       {error && (
         <span className="text-xs text-red-600 flex-shrink-0">{error}</span>
       )}
 
-      {/* Delete — plain button to avoid nested-form issue (this component lives
-          inside the parent edit <form>, so a child <form> would be ignored by
-          the browser). useTransition calls the server action directly instead. */}
       <button
         type="button"
         onClick={handleDelete}
@@ -100,7 +96,9 @@ function TourRow({
   );
 }
 
-// ── Add-tour form ────────────────────────────────────────────────────────────
+// ── Add-tour panel ────────────────────────────────────────────────────────────
+// Same constraint: no nested <form>. We read values from controlled inputs and
+// build a FormData manually before calling the server action.
 
 function AddTourForm({
   propertyId,
@@ -111,17 +109,36 @@ function AddTourForm({
   userId: string;
   language: string;
 }) {
-  const [addState, formAction] = useFormState(addVrTour, {});
+  const [isPending, startTransition] = useTransition();
   const [panorama, setPanorama] = useState<string[]>([]);
-  const formRef = useRef<HTMLFormElement>(null);
+  const [roomNameDe, setRoomNameDe] = useState('');
+  const [roomName, setRoomName] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Clear panorama and reset inputs after successful add
-  useEffect(() => {
-    if (addState.success) {
-      setPanorama([]);
-      formRef.current?.reset();
-    }
-  }, [addState.success]);
+  const handleAdd = () => {
+    if (!panorama[0] || !roomNameDe.trim()) return;
+    setError(null);
+    setSuccess(false);
+
+    const fd = new FormData();
+    fd.append('property_id', propertyId);
+    fd.append('panorama_url', panorama[0]);
+    fd.append('room_name_de', roomNameDe.trim());
+    fd.append('room_name', roomName.trim());
+
+    startTransition(async () => {
+      const result = await addVrTour({}, fd);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setSuccess(true);
+        setPanorama([]);
+        setRoomNameDe('');
+        setRoomName('');
+      }
+    });
+  };
 
   return (
     <div className="mt-4 border-2 border-dashed border-slate-200 rounded-xl p-4">
@@ -132,21 +149,20 @@ function AddTourForm({
         </span>
       </div>
 
-      {addState.success && (
+      {success && (
         <div className="flex items-center gap-2 text-green-700 text-xs font-medium mb-3">
           <CheckCircle className="w-3.5 h-3.5" />
           {language === 'de' ? 'VR-Raum hinzugefügt.' : 'VR room added.'}
         </div>
       )}
 
-      {addState.error && (
+      {error && (
         <div className="flex items-center gap-2 text-red-600 text-xs mb-3">
           <AlertCircle className="w-3.5 h-3.5" />
-          {addState.error}
+          {error}
         </div>
       )}
 
-      {/* Step 1: upload panorama */}
       <ImageUpload
         bucket="panoramas"
         folder={userId}
@@ -161,21 +177,17 @@ function AddTourForm({
         }
       />
 
-      {/* Step 2: name + submit (shown once image is uploaded) */}
       {panorama.length > 0 && (
-        <form ref={formRef} action={formAction} className="mt-4 flex flex-col gap-3">
-          <input type="hidden" name="property_id"  value={propertyId} />
-          <input type="hidden" name="panorama_url" value={panorama[0]} />
-
+        <div className="mt-4 flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5">
                 {language === 'de' ? 'Zimmerbezeichnung (Deutsch) *' : 'Room name (German) *'}
               </label>
               <input
-                name="room_name_de"
                 type="text"
-                required
+                value={roomNameDe}
+                onChange={(e) => setRoomNameDe(e.target.value)}
                 placeholder={language === 'de' ? 'z.B. Wohnzimmer' : 'e.g. Wohnzimmer'}
                 className={inputCls}
               />
@@ -185,22 +197,27 @@ function AddTourForm({
                 {language === 'de' ? 'Zimmerbezeichnung (Englisch)' : 'Room name (English)'}
               </label>
               <input
-                name="room_name"
                 type="text"
+                value={roomName}
+                onChange={(e) => setRoomName(e.target.value)}
                 placeholder={language === 'de' ? 'z.B. Living Room' : 'e.g. Living Room'}
                 className={inputCls}
               />
             </div>
           </div>
 
-          <SubmitButton
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={isPending || !roomNameDe.trim()}
             className="self-start bg-brand-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-brand-700 transition-colors disabled:opacity-60 flex items-center gap-2"
-            pendingText={language === 'de' ? 'Wird gespeichert…' : 'Saving…'}
           >
-            <Plus className="w-4 h-4" />
-            {language === 'de' ? 'Raum hinzufügen' : 'Add room'}
-          </SubmitButton>
-        </form>
+            {isPending
+              ? <><Loader2 className="w-4 h-4 animate-spin" />{language === 'de' ? 'Wird gespeichert…' : 'Saving…'}</>
+              : <><Plus className="w-4 h-4" />{language === 'de' ? 'Raum hinzufügen' : 'Add room'}</>
+            }
+          </button>
+        </div>
       )}
 
       {panorama.length === 0 && (
@@ -227,7 +244,6 @@ export function VrTourManager({ propertyId, userId, initialTours }: Props) {
 
   return (
     <div>
-      {/* Existing tours */}
       {initialTours.length === 0 ? (
         <p className="text-sm text-slate-400 mb-2">
           {language === 'de'
