@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -10,5 +5,207 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  schemas  = ["public", "auth"]
+  schemas  = ["public"]
+}
+
+// ── Enums ────────────────────────────────────────────────────
+
+enum UserRole {
+  buyer
+  seller
+  agent
+  admin
+
+  @@schema("public")
+}
+
+enum PropertyType {
+  apartment
+  house
+  villa
+  chalet
+  penthouse
+  commercial
+
+  @@schema("public")
+}
+
+enum ListingType {
+  sale
+  rent
+
+  @@schema("public")
+}
+
+enum PropertyStatus {
+  active
+  reserved
+  sold
+  rented
+
+  @@schema("public")
+}
+
+enum CurrencyCode {
+  EUR
+  CHF
+
+  @@schema("public")
+}
+
+enum CountryCode {
+  AT
+  DE
+  CH
+
+  @@schema("public")
+}
+
+enum InquiryType {
+  inquiry
+  viewing
+  vr_tour
+
+  @@schema("public")
+}
+
+enum InquiryStatus {
+  new
+  read
+  responded
+  closed
+
+  @@schema("public")
+}
+
+enum AgentPlan {
+  starter
+  professional
+  enterprise
+
+  @@schema("public")
+}
+
+// ── Models ───────────────────────────────────────────────────
+
+// profiles.id maps to auth.users.id — managed by Supabase, not Prisma
+model Profile {
+  id            String        @id @db.Uuid
+  name          String
+  role          UserRole      @default(buyer)
+  phone         String?
+  avatar_url    String?
+  created_at    DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime      @default(now()) @db.Timestamptz(6)
+
+  agent_profile AgentProfile?
+  properties    Property[]
+  inquiries     Inquiry[]
+
+  @@map("profiles")
+  @@schema("public")
+}
+
+model AgentProfile {
+  id              String     @id @db.Uuid
+  agency          String
+  region          String?
+  languages       String[]
+  bio             String?
+  rating          Decimal    @default(0) @db.Decimal(3, 2)
+  review_count    Int        @default(0)
+  verified        Boolean    @default(false)
+  plan            AgentPlan  @default(starter)
+  plan_expires_at DateTime?  @db.Timestamptz(6)
+
+  profile         Profile    @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  @@map("agent_profiles")
+  @@schema("public")
+}
+
+model Property {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agent_id       String         @db.Uuid
+  title          String
+  title_de       String?
+  description    String?
+  description_de String?
+  type           PropertyType
+  listing_type   ListingType
+  price          Decimal        @db.Decimal(12, 2)
+  currency       CurrencyCode   @default(EUR)
+  price_per_sqm  Decimal?       @db.Decimal(10, 2)
+  street         String?
+  city           String
+  region         String?
+  country        CountryCode
+  postal_code    String?
+  lat            Decimal?       @db.Decimal(10, 7)
+  lng            Decimal?       @db.Decimal(10, 7)
+  rooms          Int?           @db.SmallInt
+  bedrooms       Int?           @db.SmallInt
+  bathrooms      Int?           @db.SmallInt
+  area           Decimal        @db.Decimal(10, 2)
+  plot_area      Decimal?       @db.Decimal(10, 2)
+  floor          Int?           @db.SmallInt
+  total_floors   Int?           @db.SmallInt
+  year_built     Int?           @db.SmallInt
+  parking        Boolean        @default(false)
+  elevator       Boolean        @default(false)
+  balcony        Boolean        @default(false)
+  garden         Boolean        @default(false)
+  cellar         Boolean        @default(false)
+  energy_class   String?
+  amenities      String[]
+  images         String[]
+  status         PropertyStatus @default(active)
+  featured       Boolean        @default(false)
+  views          Int            @default(0)
+  vr_views       Int            @default(0)
+  created_at     DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime       @default(now()) @db.Timestamptz(6)
+
+  agent          Profile        @relation(fields: [agent_id], references: [id])
+  vr_tours       VrTour[]
+  inquiries      Inquiry[]
+
+  @@map("properties")
+  @@schema("public")
+}
+
+model VrTour {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  property_id   String   @db.Uuid
+  panorama_url  String
+  thumbnail_url String?
+  room_name     String?
+  room_name_de  String?
+  sort_order    Int      @default(0) @db.SmallInt
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  property      Property @relation(fields: [property_id], references: [id], onDelete: Cascade)
+
+  @@map("vr_tours")
+  @@schema("public")
+}
+
+model Inquiry {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  property_id   String        @db.Uuid
+  agent_id      String        @db.Uuid
+  name          String
+  email         String
+  phone         String?
+  message       String?
+  reply_message String?
+  type          InquiryType   @default(inquiry)
+  status        InquiryStatus @default(new)
+  created_at    DateTime      @default(now()) @db.Timestamptz(6)
+
+  property      Property      @relation(fields: [property_id], references: [id], onDelete: Cascade)
+  agent         Profile       @relation(fields: [agent_id], references: [id])
+
+  @@map("inquiries")
+  @@schema("public")
 }
