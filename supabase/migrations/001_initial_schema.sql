@@ -157,20 +157,23 @@ CREATE TRIGGER trg_profiles_updated_at
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
-  user_role user_role := COALESCE(
-    (NEW.raw_user_meta_data->>'role')::user_role, 'buyer'
-  );
+  v_role user_role;
 BEGIN
+  v_role := COALESCE(
+    (NEW.raw_user_meta_data->>'role')::user_role,
+    'buyer'::user_role
+  );
+
   INSERT INTO public.profiles (id, name, role, avatar_url)
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
-    user_role,
+    v_role,
     NEW.raw_user_meta_data->>'avatar_url'
   );
 
   -- If registering as agent, create agent profile too
-  IF user_role = 'agent' THEN
+  IF v_role = 'agent'::user_role THEN
     INSERT INTO public.agent_profiles (id, agency)
     VALUES (
       NEW.id,
