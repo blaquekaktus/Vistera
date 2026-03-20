@@ -1,25 +1,26 @@
 -- ============================================================
 -- Vistera – Initial Database Schema
 -- Run this in your Supabase SQL Editor (or via supabase db push)
+-- Fully idempotent: safe to run multiple times
 -- ============================================================
 
 -- ── Extensions ──────────────────────────────────────────────
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ── Enums ───────────────────────────────────────────────────
-CREATE TYPE user_role       AS ENUM ('buyer', 'seller', 'agent', 'admin');
-CREATE TYPE property_type   AS ENUM ('apartment', 'house', 'villa', 'chalet', 'penthouse', 'commercial');
-CREATE TYPE listing_type    AS ENUM ('sale', 'rent');
-CREATE TYPE property_status AS ENUM ('active', 'reserved', 'sold', 'rented');
-CREATE TYPE currency_code   AS ENUM ('EUR', 'CHF');
-CREATE TYPE country_code    AS ENUM ('AT', 'DE', 'CH');
-CREATE TYPE inquiry_type    AS ENUM ('inquiry', 'viewing', 'vr_tour');
-CREATE TYPE inquiry_status  AS ENUM ('new', 'read', 'responded', 'closed');
-CREATE TYPE agent_plan      AS ENUM ('starter', 'professional', 'enterprise');
+CREATE TYPE IF NOT EXISTS user_role       AS ENUM ('buyer', 'seller', 'agent', 'admin');
+CREATE TYPE IF NOT EXISTS property_type   AS ENUM ('apartment', 'house', 'villa', 'chalet', 'penthouse', 'commercial');
+CREATE TYPE IF NOT EXISTS listing_type    AS ENUM ('sale', 'rent');
+CREATE TYPE IF NOT EXISTS property_status AS ENUM ('active', 'reserved', 'sold', 'rented');
+CREATE TYPE IF NOT EXISTS currency_code   AS ENUM ('EUR', 'CHF');
+CREATE TYPE IF NOT EXISTS country_code    AS ENUM ('AT', 'DE', 'CH');
+CREATE TYPE IF NOT EXISTS inquiry_type    AS ENUM ('inquiry', 'viewing', 'vr_tour');
+CREATE TYPE IF NOT EXISTS inquiry_status  AS ENUM ('new', 'read', 'responded', 'closed');
+CREATE TYPE IF NOT EXISTS agent_plan      AS ENUM ('starter', 'professional', 'enterprise');
 
 -- ── Profiles ────────────────────────────────────────────────
 -- Extends auth.users — created automatically on sign-up via trigger
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
   id          UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   name        TEXT        NOT NULL,
   role        user_role   NOT NULL DEFAULT 'buyer',
@@ -30,7 +31,7 @@ CREATE TABLE public.profiles (
 );
 
 -- ── Agent Profiles ───────────────────────────────────────────
-CREATE TABLE public.agent_profiles (
+CREATE TABLE IF NOT EXISTS public.agent_profiles (
   id              UUID REFERENCES public.profiles(id) ON DELETE CASCADE PRIMARY KEY,
   agency          TEXT        NOT NULL,
   region          TEXT,
@@ -44,7 +45,7 @@ CREATE TABLE public.agent_profiles (
 );
 
 -- ── Properties ──────────────────────────────────────────────
-CREATE TABLE public.properties (
+CREATE TABLE IF NOT EXISTS public.properties (
   id            UUID         NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   agent_id      UUID         NOT NULL REFERENCES public.profiles(id),
   -- Titles & descriptions (DE primary, EN secondary)
@@ -95,7 +96,7 @@ CREATE TABLE public.properties (
 );
 
 -- ── VR Tours ────────────────────────────────────────────────
-CREATE TABLE public.vr_tours (
+CREATE TABLE IF NOT EXISTS public.vr_tours (
   id            UUID        NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   property_id   UUID        NOT NULL REFERENCES public.properties(id) ON DELETE CASCADE,
   panorama_url  TEXT        NOT NULL,
@@ -107,7 +108,7 @@ CREATE TABLE public.vr_tours (
 );
 
 -- ── Inquiries ───────────────────────────────────────────────
-CREATE TABLE public.inquiries (
+CREATE TABLE IF NOT EXISTS public.inquiries (
   id          UUID           NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   property_id UUID           NOT NULL REFERENCES public.properties(id) ON DELETE CASCADE,
   agent_id    UUID           NOT NULL REFERENCES public.profiles(id),
@@ -122,15 +123,15 @@ CREATE TABLE public.inquiries (
 );
 
 -- ── Indexes ─────────────────────────────────────────────────
-CREATE INDEX idx_properties_agent    ON public.properties(agent_id);
-CREATE INDEX idx_properties_country  ON public.properties(country);
-CREATE INDEX idx_properties_type     ON public.properties(type);
-CREATE INDEX idx_properties_status   ON public.properties(status);
-CREATE INDEX idx_properties_featured ON public.properties(featured) WHERE featured = TRUE;
-CREATE INDEX idx_vr_tours_property   ON public.vr_tours(property_id);
-CREATE INDEX idx_inquiries_agent     ON public.inquiries(agent_id);
-CREATE INDEX idx_inquiries_property  ON public.inquiries(property_id);
-CREATE INDEX idx_inquiries_status    ON public.inquiries(status);
+CREATE INDEX IF NOT EXISTS idx_properties_agent    ON public.properties(agent_id);
+CREATE INDEX IF NOT EXISTS idx_properties_country  ON public.properties(country);
+CREATE INDEX IF NOT EXISTS idx_properties_type     ON public.properties(type);
+CREATE INDEX IF NOT EXISTS idx_properties_status   ON public.properties(status);
+CREATE INDEX IF NOT EXISTS idx_properties_featured ON public.properties(featured) WHERE featured = TRUE;
+CREATE INDEX IF NOT EXISTS idx_vr_tours_property   ON public.vr_tours(property_id);
+CREATE INDEX IF NOT EXISTS idx_inquiries_agent     ON public.inquiries(agent_id);
+CREATE INDEX IF NOT EXISTS idx_inquiries_property  ON public.inquiries(property_id);
+CREATE INDEX IF NOT EXISTS idx_inquiries_status    ON public.inquiries(status);
 
 -- ── updated_at trigger ───────────────────────────────────────
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
@@ -141,10 +142,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_properties_updated_at ON public.properties;
 CREATE TRIGGER trg_properties_updated_at
   BEFORE UPDATE ON public.properties
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
+DROP TRIGGER IF EXISTS trg_profiles_updated_at ON public.profiles;
 CREATE TRIGGER trg_profiles_updated_at
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
@@ -178,6 +181,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
@@ -190,37 +194,46 @@ ALTER TABLE public.vr_tours      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.inquiries     ENABLE ROW LEVEL SECURITY;
 
 -- profiles
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
 CREATE POLICY "Public profiles are viewable by everyone"
   ON public.profiles FOR SELECT USING (TRUE);
 
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile"
   ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
 -- agent_profiles
+DROP POLICY IF EXISTS "Agent profiles viewable by everyone" ON public.agent_profiles;
 CREATE POLICY "Agent profiles viewable by everyone"
   ON public.agent_profiles FOR SELECT USING (TRUE);
 
+DROP POLICY IF EXISTS "Agents can update own agent profile" ON public.agent_profiles;
 CREATE POLICY "Agents can update own agent profile"
   ON public.agent_profiles FOR UPDATE USING (auth.uid() = id);
 
 -- properties: public read for active; agent owns their listings
+DROP POLICY IF EXISTS "Active properties are public" ON public.properties;
 CREATE POLICY "Active properties are public"
   ON public.properties FOR SELECT
   USING (status = 'active' OR agent_id = auth.uid());
 
+DROP POLICY IF EXISTS "Agents can insert own properties" ON public.properties;
 CREATE POLICY "Agents can insert own properties"
   ON public.properties FOR INSERT
   WITH CHECK (agent_id = auth.uid());
 
+DROP POLICY IF EXISTS "Agents can update own properties" ON public.properties;
 CREATE POLICY "Agents can update own properties"
   ON public.properties FOR UPDATE
   USING (agent_id = auth.uid());
 
+DROP POLICY IF EXISTS "Agents can delete own properties" ON public.properties;
 CREATE POLICY "Agents can delete own properties"
   ON public.properties FOR DELETE
   USING (agent_id = auth.uid());
 
 -- vr_tours: same visibility as parent property
+DROP POLICY IF EXISTS "VR tours viewable with parent property" ON public.vr_tours;
 CREATE POLICY "VR tours viewable with parent property"
   ON public.vr_tours FOR SELECT USING (
     EXISTS (
@@ -230,6 +243,7 @@ CREATE POLICY "VR tours viewable with parent property"
     )
   );
 
+DROP POLICY IF EXISTS "Agents manage their own VR tours" ON public.vr_tours;
 CREATE POLICY "Agents manage their own VR tours"
   ON public.vr_tours FOR ALL USING (
     EXISTS (
@@ -239,13 +253,16 @@ CREATE POLICY "Agents manage their own VR tours"
   );
 
 -- inquiries: agent sees their own; anyone can submit
+DROP POLICY IF EXISTS "Anyone can submit inquiries" ON public.inquiries;
 CREATE POLICY "Anyone can submit inquiries"
   ON public.inquiries FOR INSERT WITH CHECK (TRUE);
 
+DROP POLICY IF EXISTS "Agents see inquiries for their properties" ON public.inquiries;
 CREATE POLICY "Agents see inquiries for their properties"
   ON public.inquiries FOR SELECT
   USING (agent_id = auth.uid());
 
+DROP POLICY IF EXISTS "Agents update inquiry status" ON public.inquiries;
 CREATE POLICY "Agents update inquiry status"
   ON public.inquiries FOR UPDATE
   USING (agent_id = auth.uid());
