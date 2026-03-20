@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useFormState } from 'react-dom';
 import { SubmitButton } from '@/components/ui/SubmitButton';
 import { ImageUpload } from '@/components/ui/ImageUpload';
+import { VrTourManager } from '@/components/dashboard/VrTourManager';
+import type { VrTour } from '@/components/dashboard/VrTourManager';
 import Link from 'next/link';
 import { Mountain, ArrowLeft, AlertCircle, CheckCircle, Building2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -299,6 +301,30 @@ export default function EditListingClient({ property, userId }: Props) {
               rows={4}
               defaultValue={(property.amenities ?? []).join('\n')}
               className={inputCls}
+            />
+          </div>
+
+          {/* ── Section 8: VR Tours ─────────────────────────────── */}
+          <div className="bg-white rounded-2xl border border-slate-100 p-6 mb-5">
+            <h2 className="font-bold text-slate-900 mb-1">
+              {language === 'de' ? '8. VR-Touren' : '8. VR Tours'}
+            </h2>
+            <p className="text-xs text-slate-400 mb-4">
+              {language === 'de'
+                ? 'Lade equirektangulare 360°-Panoramabilder hoch. Jedes Bild wird ein begehbarer Raum in der VR-Tour.'
+                : 'Upload equirectangular 360° panoramas. Each image becomes a walkable room in the VR tour.'}
+            </p>
+            <VrTourManager
+              propertyId={property.id as string}
+              userId={userId}
+              initialTours={((property.vr_tours as Record<string, unknown>[] | null) ?? []).map((t): VrTour => ({
+                id:           t.id as string,
+                panoramaUrl:  t.panorama_url as string,
+                thumbnailUrl: (t.thumbnail_url as string | null) ?? null,
+                roomName:     (t.room_name as string) || '',
+                roomNameDe:   (t.room_name_de as string) || '',
+                sortOrder:    (t.sort_order as number) ?? 0,
+              }))}
             />
           </div>
 
