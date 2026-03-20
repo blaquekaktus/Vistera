@@ -147,8 +147,8 @@ async function run() {
       .select('id')
       .single();
 
-    if (propErr) {
-      console.error(`    ❌ property: ${propErr.message}`);
+    if (propErr || !propRow) {
+      console.error(`    ❌ property: ${propErr?.message ?? 'no row returned'}`);
       continue;
     }
 

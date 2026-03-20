@@ -39,7 +39,7 @@ CREATE OR REPLACE FUNCTION public.create_seed_user(
 ) RETURNS uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, extensions
 AS $$
 DECLARE
   v_id              uuid;
