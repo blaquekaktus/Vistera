@@ -46,7 +46,27 @@ DECLARE
   v_has_sso_user    boolean;
   v_has_is_anon     boolean;
   v_has_provider_id boolean;
+  v_pw              text;
+  v_crypt_ns        text;
 BEGIN
+
+  -- ── Step 0: Hash the password ─────────────────────────────────────────────
+  -- Find whichever schema pgcrypto was installed into (public, extensions,
+  -- or anything else) rather than hard-coding a search_path.
+  SELECT n.nspname INTO v_crypt_ns
+  FROM pg_proc p
+  JOIN pg_namespace n ON p.pronamespace = n.oid
+  WHERE p.proname = 'crypt'
+  LIMIT 1;
+
+  IF v_crypt_ns IS NULL THEN
+    RAISE EXCEPTION
+      'pgcrypto not found. Enable it in Supabase Dashboard → Database → Extensions → pgcrypto';
+  END IF;
+
+  EXECUTE format('SELECT %I.crypt($1, %I.gen_salt($2))', v_crypt_ns, v_crypt_ns)
+    INTO v_pw
+    USING 'Vistera2024!', 'bf';
 
   -- ── Step 1: Repair handle_new_user in-place ──────────────────────────────
   -- Runs as the owner (postgres role) so CREATE OR REPLACE succeeds.
@@ -112,7 +132,7 @@ BEGIN
         '00000000-0000-0000-0000-000000000000'::uuid,
         'authenticated', 'authenticated',
         p_email,
-        crypt('Vistera2024!', gen_salt('bf')),
+        v_pw,
         now(),
         jsonb_build_object('name', p_name, 'role', 'agent'),
         '{"provider":"email","providers":["email"]}'::jsonb,
@@ -129,7 +149,7 @@ BEGIN
         '00000000-0000-0000-0000-000000000000'::uuid,
         'authenticated', 'authenticated',
         p_email,
-        crypt('Vistera2024!', gen_salt('bf')),
+        v_pw,
         now(),
         jsonb_build_object('name', p_name, 'role', 'agent'),
         '{"provider":"email","providers":["email"]}'::jsonb,
