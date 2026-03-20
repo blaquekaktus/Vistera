@@ -26,3 +26,5 @@ yarn-error.log*
 *.pem
 .vercel
 tsconfig.tsbuildinfo
+
+/src/generated/prisma
