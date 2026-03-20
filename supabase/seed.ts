@@ -7,12 +7,9 @@
  *   - NEXT_PUBLIC_SUPABASE_URL
  *   - SUPABASE_SERVICE_ROLE_KEY  (never expose client-side)
  *
- * One-time setup (if not done yet):
+ * One-time setup:
  *   Run supabase/migrations/005_seed_helper.sql in your Supabase SQL Editor,
- *   then run this script.
- *
- * Usage:
- *   npm run seed
+ *   then run:  npm run seed
  */
 
 import { config } from 'dotenv';
@@ -37,44 +34,34 @@ const supabase = createClient(url, key, {
 async function run() {
   console.log('🌱  Seeding Vistera database…\n');
 
-  // ── 0. Pre-flight ────────────────────────────────────────────────────────────
-  const { error: preflightErr } = await (supabase as any)
+  // ── 0. Pre-flight: confirm schema exists ────────────────────────────────────
+  const { error: preflightErr } = await supabase
     .from('profiles')
     .select('id')
     .limit(1);
   if (preflightErr) {
-    console.error('❌  Pre-flight failed — run 001_initial_schema.sql in your Supabase SQL Editor first.');
+    console.error('❌  Schema missing — run 001_initial_schema.sql in your Supabase SQL Editor first.');
     console.error(`    ${preflightErr.message}`);
     process.exit(1);
   }
+  console.log('✅  Schema verified.\n');
 
-  // Verify the seed helper function exists
-  const { error: fnCheckErr } = await (supabase as any).rpc('create_seed_user', {
-    p_email: '__probe__@vistera.test',
-    p_name: '', p_phone: '', p_agency: '', p_region: '',
-    p_languages: [], p_rating: 0, p_review_count: 0,
-  });
-  // PGRST202 = function not found; anything else means the function exists but errored (expected for probe)
-  if (fnCheckErr?.code === 'PGRST202') {
-    console.error('❌  create_seed_user function not found.');
-    console.error('    Run supabase/migrations/005_seed_helper.sql in your Supabase SQL Editor, then retry.');
-    process.exit(1);
-  }
-  // Clean up probe user if it was accidentally created
-  await (supabase.auth.admin as any).listUsers().then(async ({ data }: any) => {
-    const probe = data?.users?.find((u: any) => u.email === '__probe__@vistera.test');
-    if (probe) await (supabase.auth.admin as any).deleteUser(probe.id);
-  }).catch(() => {});
+  // ── 1. Create agent users via the seed helper RPC ───────────────────────────
+  //
+  // create_seed_user() does three things atomically:
+  //   1. Repairs the handle_new_user trigger (fixes the v1 bug)
+  //   2. Inserts directly into auth.users (bypasses Supabase Auth API)
+  //   3. Upserts profiles + agent_profiles with full data
+  //
+  // If the function is not found (PGRST202), the migration hasn't been run yet.
 
-  console.log('✅  Database ready.\n');
-
-  // ── 1. Create agent auth users via RPC ──────────────────────────────────────
   const agentIdMap: Record<string, string> = {};
+  let migrationMissing = false;
 
   for (const agent of agents) {
     console.log(`👤  Creating agent: ${agent.name}`);
 
-    const { data: userId, error } = await (supabase as any).rpc('create_seed_user', {
+    const { data: userId, error } = await supabase.rpc('create_seed_user', {
       p_email:        agent.email,
       p_name:         agent.name,
       p_phone:        agent.phone,
@@ -86,6 +73,14 @@ async function run() {
     });
 
     if (error) {
+      if (error.code === 'PGRST202') {
+        console.error('\n❌  create_seed_user function not found in your database.');
+        console.error('    Run this file in your Supabase SQL Editor first:');
+        console.error('    → supabase/migrations/005_seed_helper.sql');
+        console.error('    Then run npm run seed again.\n');
+        migrationMissing = true;
+        break;
+      }
       console.error(`    ❌ ${error.message}`);
       continue;
     }
@@ -94,19 +89,21 @@ async function run() {
     console.log(`    ✅  ${userId}`);
   }
 
+  if (migrationMissing) process.exit(1);
+
   console.log('');
 
-  // ── 2. Insert properties ────────────────────────────────────────────────────
+  // ── 2. Insert properties and VR tours ───────────────────────────────────────
   for (const prop of properties) {
     const agentDbId = agentIdMap[prop.agent.id];
     if (!agentDbId) {
-      console.warn(`⚠️   Skipping "${prop.titleDe}" — agent not found`);
+      console.warn(`⚠️   Skipping "${prop.titleDe}" — agent not seeded`);
       continue;
     }
 
     console.log(`🏠  Inserting: ${prop.titleDe}`);
 
-    const { data: propRow, error: propErr } = await (supabase as any)
+    const { data: propRow, error: propErr } = await supabase
       .from('properties')
       .insert({
         agent_id:       agentDbId,
@@ -118,7 +115,7 @@ async function run() {
         listing_type:   prop.listingType,
         price:          prop.price,
         currency:       prop.currency,
-        price_per_sqm:  prop.pricePerSqm ?? null,
+        price_per_sqm:  prop.pricePerSqm    ?? null,
         street:         prop.address.street,
         city:           prop.address.city,
         region:         prop.address.region,
@@ -130,10 +127,10 @@ async function run() {
         bedrooms:       prop.features.bedrooms,
         bathrooms:      prop.features.bathrooms,
         area:           prop.features.area,
-        plot_area:      prop.features.plotArea ?? null,
-        floor:          prop.features.floor ?? null,
+        plot_area:      prop.features.plotArea    ?? null,
+        floor:          prop.features.floor       ?? null,
         total_floors:   prop.features.totalFloors ?? null,
-        year_built:     prop.features.yearBuilt ?? null,
+        year_built:     prop.features.yearBuilt   ?? null,
         parking:        prop.features.parking,
         elevator:       prop.features.elevator,
         balcony:        prop.features.balcony,
@@ -151,13 +148,13 @@ async function run() {
       .single();
 
     if (propErr) {
-      console.error(`    ❌ ${propErr.message}`);
+      console.error(`    ❌ property: ${propErr.message}`);
       continue;
     }
 
     for (let i = 0; i < prop.vrTours.length; i++) {
       const tour = prop.vrTours[i];
-      await (supabase as any).from('vr_tours').insert({
+      const { error: vrErr } = await supabase.from('vr_tours').insert({
         property_id:   propRow.id,
         panorama_url:  tour.panoramaUrl,
         thumbnail_url: tour.thumbnailUrl,
@@ -165,9 +162,10 @@ async function run() {
         room_name_de:  tour.roomNameDe,
         sort_order:    i,
       });
+      if (vrErr) console.error(`    ❌ vr_tour ${i}: ${vrErr.message}`);
     }
 
-    console.log(`    ✅  Done (${prop.vrTours.length} VR tour${prop.vrTours.length !== 1 ? 's' : ''})`);
+    console.log(`    ✅  ${prop.vrTours.length} VR tour${prop.vrTours.length !== 1 ? 's' : ''}`);
   }
 
   console.log('\n🎉  Seeding complete!');
