@@ -21,6 +21,7 @@ export default async function ProfilePage() {
 
   return (
     <ProfileClient
+      userId={user.id}
       email={user.email ?? ''}
       name={profile?.name ?? ''}
       phone={profile?.phone ?? ''}
