@@ -13,8 +13,8 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { formatPrice, getCountryFlag, getCountryName, cn } from '@/lib/utils';
-import { useState } from 'react';
-import { submitInquiry } from '@/lib/actions/property';
+import { useState, useEffect } from 'react';
+import { submitInquiry, incrementViews } from '@/lib/actions/property';
 import type { Property } from '@/lib/types';
 
 const inquiryInitialState = { error: undefined, success: false };
@@ -27,6 +27,11 @@ export default function PropertyDetailClient({ property }: Props) {
   const { language, t } = useLanguage();
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [inquiryState, inquiryAction] = useFormState(submitInquiry, inquiryInitialState);
+
+  // Track page view on mount
+  useEffect(() => {
+    incrementViews(property.id).catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const title = language === 'de' ? property.titleDe : property.title;
   const description = language === 'de' ? property.descriptionDe : property.description;
@@ -69,13 +74,15 @@ export default function PropertyDetailClient({ property }: Props) {
             <div className="lg:col-span-2 space-y-6">
               {/* Main image */}
               <div className="relative rounded-2xl overflow-hidden bg-slate-200 aspect-[16/9]">
-                <Image
-                  src={property.images[activeImageIdx]}
-                  alt={title}
-                  fill
-                  className="object-cover"
-                  priority
-                />
+                {property.images.length > 0 && (
+                  <Image
+                    src={property.images[activeImageIdx]}
+                    alt={title}
+                    fill
+                    className="object-cover"
+                    priority
+                  />
+                )}
                 {/* Type badge */}
                 <div className="absolute top-4 left-4 bg-brand-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">
                   {typeLabel[property.type][language]}

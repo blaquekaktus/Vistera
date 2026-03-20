@@ -9,6 +9,22 @@ import {
   sendReplyNotification,
 } from '@/lib/email';
 
+// ── Increment view counters ──────────────────────────────────────────────────
+
+export async function incrementVrViews(propertyId: string): Promise<void> {
+  if (!propertyId) return;
+  const supabase = createClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase as any).rpc('increment_vr_views', { p_id: propertyId });
+}
+
+export async function incrementViews(propertyId: string): Promise<void> {
+  if (!propertyId) return;
+  const supabase = createClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase as any).rpc('increment_views', { p_id: propertyId });
+}
+
 // ── Reply to inquiry ────────────────────────────────────────────────────────
 
 export interface ReplyState {
@@ -53,10 +69,10 @@ export async function replyToInquiry(prevState: ReplyState, formData: FormData):
 
   if (error) return { error: error.message };
 
-  // Notify the inquiry sender (fire-and-forget)
+  // Notify the inquiry sender (fire-and-forget — email failures must not break the action)
   if (inquiry) {
     const propertyTitle = inquiry.property?.title_de ?? inquiry.property?.title ?? '';
-    sendReplyNotification({
+    await sendReplyNotification({
       to: inquiry.email,
       senderName: inquiry.name,
       agentName: agentProfile?.name ?? 'Ihr Makler',
