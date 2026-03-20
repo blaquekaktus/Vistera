@@ -128,7 +128,6 @@ export default function DashboardClient({
         <nav className="flex-1 p-4 flex flex-col gap-1">
           {[
             { icon: LayoutDashboard, labelDe: 'Übersicht',    labelEn: 'Overview',      href: '/dashboard' },
-            { icon: Eye,             labelDe: 'VR-Touren',    labelEn: 'VR Tours',      href: '/properties' },
             { icon: MessageSquare,   labelDe: 'Anfragen',     labelEn: 'Inquiries',     href: '/dashboard/inquiries' },
             { icon: Calendar,        labelDe: 'Termine',      labelEn: 'Appointments',  href: '/dashboard/appointments' },
             { icon: TrendingUp,      labelDe: 'Analytics',    labelEn: 'Analytics',     href: '/dashboard/analytics' },
