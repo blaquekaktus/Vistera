@@ -47,6 +47,8 @@ export default function PropertiesClient({ initialProperties }: Props) {
       if (filters.minPrice !== '' && p.price < filters.minPrice) return false;
       if (filters.maxPrice !== '' && p.price > filters.maxPrice) return false;
       if (filters.minArea !== '' && p.features.area < filters.minArea) return false;
+      if (filters.maxArea !== '' && p.features.area > filters.maxArea) return false;
+      if (filters.minRooms !== '' && p.features.rooms < filters.minRooms) return false;
       if (filters.hasVrTour && p.vrTours.length === 0) return false;
 
       return true;
