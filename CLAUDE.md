@@ -40,6 +40,28 @@ Before a single line of code is modified, you must provide a Diagnosis:
 - **Zero-Error Build:** `npm run build` or `npx tsc --noEmit` must be run locally.
 - **Verification First:** Do NOT ask the user to test until the local build passes 100%.
 
+### 4. Git History Is a Diagnostic Tool
+Before reading any source file, run:
+- `git log --oneline -20` — spot recent changes and previous fix attempts
+- `git show <hash>` — inspect the exact diff for any relevant commit
+
+A previous fix may already exist. A regression may be visible. This step comes **before** reading source files.
+
+### 5. Silent Failure Is a Red Flag
+When you see `.catch(() => {})` or any swallowed error on a database/RPC/network call:
+- Do NOT assume the call succeeds in production
+- Verify the full chain: code → server action → RPC function → migration applied → migration listed in setup guide
+
+A clean `npm run build` does **not** mean the feature works end-to-end.
+
+### 6. Migration Completeness Check
+For any bug where Supabase data is not updating:
+1. List all `.sql` files in `supabase/migrations/`
+2. Cross-check every file against the setup instructions in `PROJECT_STATUS.md`
+3. Any migration missing from the setup guide is a root cause candidate
+
+The bug may not be in code at all — it may be an ops gap between "migration file exists" and "migration actually applied."
+
 ## IV. Mandatory Output Format
 
 ### Stage 1: Diagnosis (Before Editing)
