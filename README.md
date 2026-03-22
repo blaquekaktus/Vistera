@@ -1,6 +1,6 @@
 # Vistera
 
-A VR Proptech platform that begins with the DACH (Austria, Germany, Switzerland) Alpine market — the most underserved high-value segment for international remote buyers — as our proof of concept and initial revenue base, with the architecture and ambition to serve any international property market. Built with Next.js 14, Supabase, and Three.js.
+A VR property platform that begins with the DACH (Austria, Germany, Switzerland) Alpine market — the most underserved high-value segment for international remote buyers — as our proof of concept and initial revenue base, with the architecture and ambition to serve any international property market. Built with Next.js 14, Supabase, and Three.js.
 
 ---
 
