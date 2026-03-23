@@ -44,13 +44,19 @@ export function PropertyCard({ property, variant = 'default' }: PropertyCardProp
         'relative overflow-hidden bg-slate-100',
         variant === 'compact' ? 'w-48 flex-shrink-0' : 'h-52'
       )}>
-        <Image
-          src={property.images[0]}
-          alt={title}
-          fill
-          className="object-cover group-hover:scale-105 transition-transform duration-500"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        />
+        {property.images[0] ? (
+          <Image
+            src={property.images[0]}
+            alt={title}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-slate-200 flex items-center justify-center">
+            <span className="text-slate-400 text-xs">No image</span>
+          </div>
+        )}
 
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5">
@@ -151,13 +157,21 @@ export function PropertyCard({ property, variant = 'default' }: PropertyCardProp
         {/* Footer */}
         <div className="flex items-center justify-between pt-3 border-t border-slate-50">
           <div className="flex items-center gap-2">
-            <Image
-              src={property.agent.avatar}
-              alt={property.agent.name}
-              width={28}
-              height={28}
-              className="rounded-full object-cover"
-            />
+            {property.agent.avatar ? (
+              <Image
+                src={property.agent.avatar}
+                alt={property.agent.name}
+                width={28}
+                height={28}
+                className="rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-7 h-7 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-xs font-bold text-brand-600">
+                  {property.agent.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
+                </span>
+              </div>
+            )}
             <span className="text-xs text-slate-500 line-clamp-1">{property.agent.name}</span>
           </div>
 

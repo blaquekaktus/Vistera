@@ -269,12 +269,18 @@ export default function PropertyDetailClient({ property }: Props) {
                           href={`/properties/${property.id}/tour?room=${tour.id}`}
                           className="group relative aspect-video rounded-xl overflow-hidden bg-slate-100 border border-slate-200 hover:border-brand-300 transition-all"
                         >
-                          <Image
-                            src={tour.thumbnailUrl}
-                            alt={roomName}
-                            fill
-                            className="object-cover group-hover:scale-105 transition-transform"
-                          />
+                          {tour.thumbnailUrl ? (
+                            <Image
+                              src={tour.thumbnailUrl}
+                              alt={roomName}
+                              fill
+                              className="object-cover group-hover:scale-105 transition-transform"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 bg-slate-200 flex items-center justify-center">
+                              <Play className="w-8 h-8 text-slate-400" />
+                            </div>
+                          )}
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                             <Play className="w-8 h-8 text-white fill-white" />
                           </div>

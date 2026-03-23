@@ -61,7 +61,7 @@ export function mapDbProperty(row: DbPropertyRow): Property {
     vrTours: (row.vr_tours ?? []).map((vt: DbPropertyRow) => ({
       id: vt.id,
       panoramaUrl: vt.panorama_url,
-      thumbnailUrl: vt.thumbnail_url ?? '',
+      thumbnailUrl: vt.thumbnail_url || vt.panorama_url || '',
       roomName: vt.room_name ?? '',
       roomNameDe: vt.room_name_de ?? '',
     })),
