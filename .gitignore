@@ -28,3 +28,5 @@ yarn-error.log*
 tsconfig.tsbuildinfo
 
 /src/generated/prisma
+.env
+.env.local
