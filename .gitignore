@@ -34,3 +34,5 @@ tsconfig.tsbuildinfo
 .env.local
 .env
 .env.local
+.env
+.env.local
