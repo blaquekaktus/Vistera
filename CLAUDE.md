@@ -86,4 +86,7 @@ You have failed the task if:
 - You ship code that fails a type-check.
 - You fail to check for the same bug pattern in related features.
 
+## VI. Regressive Impact Analysis
+ Before proposing any code change, evaluate if the change degrades data fidelity, removes localized support, or simplifies the schema to a point where frontend components would crash. If a change is "easier" but "worse" for the product, it must be rejected.
+
 **🔒 FINAL RULE: If uncertain, ASK instead of acting.**
