@@ -66,13 +66,22 @@ Email confirmation and password reset links will 404 in production without this.
 - `https://<your-domain>/**` (production)
 
 ### B5 — Vercel env vars not set (MEDIUM — production only)
-Deployment will build but fail at runtime without these in Vercel project settings:
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `NEXT_PUBLIC_SITE_URL`
-- `RESEND_API_KEY` *(optional — email silently skipped if absent)*
-- `RESEND_FROM_EMAIL` *(optional — defaults to `noreply@vistera.at`)*
+Deployment will build but fail at runtime without these set in the Vercel dashboard.
+
+**Fix:** Vercel dashboard → Project → Settings → Environment Variables → add each:
+
+| Variable | Value |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://<ref>.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | your anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | your service role key |
+| `NEXT_PUBLIC_SITE_URL` | `https://<your-vercel-domain>` |
+| `RESEND_API_KEY` | *(optional — email silently skipped if absent)* |
+| `RESEND_FROM_EMAIL` | *(optional — defaults to `noreply@vistera.at`)* |
+
+> **Important:** Do NOT use `vercel secrets` or `@secret-name` references. Set the variables
+> directly in the Vercel dashboard for all environments (Production, Preview, Development).
+> `NEXT_PUBLIC_*` vars must be present at **build time** — set them before triggering a deploy.
 
 ---
 
