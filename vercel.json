@@ -8,6 +8,6 @@
     "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY": "sb_publishable_zON4k1vzzKPvDXNPsFMCKQ_gQKCynH8",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3dnNlYW1icm1ucnN5ZndrcXhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5ODg1NzUsImV4cCI6MjA4OTU2NDU3NX0.1X_SDh9qamRtH-AGY7tUF-_3xbPcuGYWlhaiYXkKlrU",
     "SUPABASE_SERVICE_ROLE_KEY": "ssb_secret_OUofS96FsKz_X7pPWv2kLw_tf6LOfp_",
-    "NEXT_PUBLIC_SITE_URL": "vistera.vercel.app"
+    "NEXT_PUBLIC_SITE_URL": "https://vistera.vercel.app"
   }
 }
