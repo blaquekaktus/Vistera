@@ -45,6 +45,7 @@ Tables and storage buckets don't exist until migrations run.
 1. `supabase/migrations/001_initial_schema.sql` — all tables, enums, RLS, triggers
 2. `supabase/migrations/003_inquiry_reply.sql` — adds `reply_message` column
 3. `supabase/migrations/004_storage_buckets.sql` — 3 storage buckets + RLS
+4. `supabase/migrations/007_increment_view_functions.sql` — RPC functions for VR/page view counters
 
 > `002_seed_data.sql` is intentionally empty — skip it.
 
@@ -95,12 +96,13 @@ Deployment will build but fail at runtime without these in Vercel project settin
 2. Paste and run `supabase/migrations/001_initial_schema.sql`
 3. Paste and run `supabase/migrations/003_inquiry_reply.sql`
 4. Paste and run `supabase/migrations/004_storage_buckets.sql`
-5. Copy `.env.example` → `.env.local`, fill in your Supabase credentials
-6. Run `npm run seed`
-7. Run `npm run dev`
-8. Open `http://localhost:3000` — browse properties and VR tour without login
-9. Go to `/login` — use a seeded agent email + `Vistera2024!`
-10. Confirm dashboard, listing creation, and inquiry flow work
+5. Paste and run `supabase/migrations/007_increment_view_functions.sql`
+6. Copy `.env.example` → `.env.local`, fill in your Supabase credentials
+7. Run `npm run seed`
+8. Run `npm run dev`
+9. Open `http://localhost:3000` — browse properties and VR tour without login
+10. Go to `/login` — use a seeded agent email + `Vistera2024!`
+11. Confirm dashboard, listing creation, and inquiry flow work
 
 **If migrations are already applied:**
 
